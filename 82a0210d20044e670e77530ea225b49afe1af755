@@ -1,0 +1,77 @@
+site/components/Hero.tsx
+  ec2d162aeedcf227 72-73
+  2c72c93eceab189c 57
+  943727c25cb662c5 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "82a0210d20044e670e77530ea225b49afe1af755",
+  "prompts": {
+    "16ea5f7eb7e342c2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9058-c509-7991-8cfc-a03624307b3c",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "2c72c93eceab189c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9058-02d4-7872-b9e2-5dd2b8f3c19e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 12,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "943727c25cb662c5": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "e356c451-b86d-42f8-8360-b184291bdcdd",
+        "model": "copilot/claude-haiku-4.5"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "9ecfd72e4ff8f92b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9059-02f7-77e2-80c0-0de02863830e",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "ec2d162aeedcf227": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "67a1c064-e464-450a-aa0d-e9bd3cbf42da",
+        "model": "copilot/claude-haiku-4.5"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
