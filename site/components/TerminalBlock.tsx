@@ -19,17 +19,11 @@ export function TerminalBlock() {
   const ref = useRef<HTMLDivElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.45 });
 
-  const [started, setStarted] = useState(false);
   const [typedLen, setTypedLen] = useState(0);
 
+  const started = inView;
   const done = typedLen >= script.length;
   const typed = useMemo(() => script.slice(0, typedLen), [typedLen]);
-
-  useEffect(() => {
-    if (inView && !started) {
-      setStarted(true);
-    }
-  }, [inView, started]);
 
   useEffect(() => {
     if (!started || done) {

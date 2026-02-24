@@ -3,9 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-const INSTALL =
-  "curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash";
-
 export function Navbar() {
   return (
     <motion.header
