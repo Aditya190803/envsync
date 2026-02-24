@@ -1,6 +1,6 @@
-# envsync
+# Env-Sync
 
-`envsync` is a terminal-first CLI for managing environment variables with local encryption and explicit sync.
+Env-Sync is a terminal-first CLI for managing environment variables with local encryption and explicit sync.
 
 This repository includes a working Go MVP with local-first encrypted secrets, explicit sync, remote conflict handling, and restore support.
 
@@ -24,19 +24,19 @@ This repository includes a working Go MVP with local-first encrypted secrets, ex
 ### From GitHub Releases (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash
 ```
 
 Install both binaries (`envsync` and `envsync-server`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/scripts/install.sh | bash -s -- --with-server --yes
+curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash -s -- --with-server --yes
 ```
 
 Pin to a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/scripts/install.sh | bash -s -- --version v0.1.0 --yes
+curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash -s -- --version v0.1.0 --yes
 ```
 
 Installer defaults:
@@ -51,6 +51,15 @@ Optional installer environment variables:
 - `ENVSYNC_INSTALL_REPO`
 - `ENVSYNC_INSTALL_VERSION`
 - `ENVSYNC_INSTALL_DIR`
+- `ENVSYNC_INSTALL_BASE_URL` (artifact endpoint override, useful in CI smoke tests)
+- `ENVSYNC_INSTALL_CHECKSUMS_URL` (custom checksums manifest URL)
+- `ENVSYNC_INSTALL_SKIP_VERIFY` (`true` to skip checksum verification; not recommended)
+
+Installer integrity behavior:
+
+- Verifies downloaded release assets against `checksums.txt` by default
+- Supports `sha256sum` or `shasum -a 256`
+- Exits on checksum mismatch
 
 Default installer repo: `Aditya190803/envsync`.
 
@@ -330,6 +339,10 @@ Includes:
 - `go test ./...`
 - `go build ./...`
 - token-protected remote endpoint check (`ENVSYNC_CI_REMOTE_TOKEN` secret, fallback `ci-token`)
+- local artifact-based release smoke test (`init`, `push`, `pull`, `restore`)
+- release workflow for signed artifacts and published checksums/signatures
+
+CI-first usage examples: [`docs/ci-noninteractive-examples.md`](./docs/ci-noninteractive-examples.md)
 
 ## Security docs
 
@@ -338,12 +351,22 @@ Includes:
 - Security architecture: [`docs/security-architecture.md`](./docs/security-architecture.md)
 - Team vault model: [`docs/team-vault-model.md`](./docs/team-vault-model.md)
 - SSO/auth baseline: [`docs/sso-auth-baseline.md`](./docs/sso-auth-baseline.md)
+- Team/RBAC/SSO guide: [`docs/team-rbac-sso.md`](./docs/team-rbac-sso.md)
 - Retention and backup policy: [`docs/retention-backup-policy.md`](./docs/retention-backup-policy.md)
 - Rotation runbook: [`docs/rotation-runbook.md`](./docs/rotation-runbook.md)
 - Recovery phrase lifecycle policy: [`docs/recovery-phrase-lifecycle-policy.md`](./docs/recovery-phrase-lifecycle-policy.md)
 - Security sign-off: [`docs/security-signoff-v1.0.md`](./docs/security-signoff-v1.0.md)
 - Migration and upgrade guide: [`docs/migration-upgrade.md`](./docs/migration-upgrade.md)
 - Responsible disclosure process: [`SECURITY.md`](./SECURITY.md)
+- GA command reference: [`docs/commands-ga.md`](./docs/commands-ga.md)
+- CLI UX review: [`docs/cli-ux-review.md`](./docs/cli-ux-review.md)
+- Incident and recovery runbook: [`docs/incident-recovery-runbook.md`](./docs/incident-recovery-runbook.md)
+- Versioning policy: [`docs/release-versioning-policy.md`](./docs/release-versioning-policy.md)
+- Release rollback plan: [`docs/release-rollback-plan.md`](./docs/release-rollback-plan.md)
+- Alerting operations: [`docs/alerting-operations.md`](./docs/alerting-operations.md)
+- On-call ownership and escalation: [`docs/on-call-escalation.md`](./docs/on-call-escalation.md)
+- v1.0 release evidence: [`docs/v1.0-release-evidence.md`](./docs/v1.0-release-evidence.md)
+- v1.0 RC user validation: [`docs/v1.0-rc-user-validation.md`](./docs/v1.0-rc-user-validation.md)
 
 ## Security notes
 
