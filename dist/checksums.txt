@@ -1,0 +1,12 @@
+e2384d795527197b64b7292fa3503d0d8fc4b6c5c5cec4aecc729c3fbf2b0357  ./envsync-server_1.0.0-rc.1_darwin_amd64.tar.gz
+68716e767adf67f3fa446b878c7a62b06c048d4830b1c0a931d3027a0075d5d0  ./envsync-server_1.0.0-rc.1_darwin_arm64.tar.gz
+a130f0c9016fbe9f687e868498f340005eafaebed76963a27eaf35d65e061c14  ./envsync-server_1.0.0-rc.1_linux_amd64.tar.gz
+ba1921c55ef5df2d812c2acae2e7d6ce0909c1889b9804f7ce45d861dde89676  ./envsync-server_1.0.0-rc.1_linux_arm64.tar.gz
+6a7d00dee00358255fd832a92430ef92b189f62d6968ad4a6d3276343d5a1519  ./envsync-server_1.0.0-rc.1_windows_amd64.tar.gz
+af9c9b330a6c677d1a5bbbf836402468e9ea70e0535beffb79653adb2323f23f  ./envsync-server_1.0.0-rc.1_windows_arm64.tar.gz
+548cb1bab4be012845e4df2c673a75dafa3ad8ed5933bbf7374a6fcc500a1330  ./envsync_1.0.0-rc.1_darwin_amd64.tar.gz
+ccc0945080d4baff732f24be2e10ca30ceb5e383ebbff4ce36c7de98d0963673  ./envsync_1.0.0-rc.1_darwin_arm64.tar.gz
+efa155a62e91b934ded8b9e7d43b3f89c9a4e276eb883e02c4029511fbaccc66  ./envsync_1.0.0-rc.1_linux_amd64.tar.gz
+3d4d555bc5d1c3eac509865e96c8bec40098103e91c1ac47f1725ae3fc9f8e96  ./envsync_1.0.0-rc.1_linux_arm64.tar.gz
+d2d316415100365a143d1989bae58f3a37cb900ebf1644f38b0806186c18d4e0  ./envsync_1.0.0-rc.1_windows_amd64.tar.gz
+6c3b86213cd221d9471518435717f6e4e61c4c19478b3e403e71c5200bbf1110  ./envsync_1.0.0-rc.1_windows_arm64.tar.gz
