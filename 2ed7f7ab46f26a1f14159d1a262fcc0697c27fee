@@ -1,0 +1,77 @@
+go.sum
+  b2ea0c216bd93f5b 1-4
+go.mod
+  b2ea0c216bd93f5b 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "2ed7f7ab46f26a1f14159d1a262fcc0697c27fee",
+  "prompts": {
+    "0209b3d19ffc1938": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c903a-a8e6-7163-95d4-3e3eba2dee1d",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 22,
+      "total_deletions": 9,
+      "accepted_lines": 22,
+      "overriden_lines": 0
+    },
+    "b2ea0c216bd93f5b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9024-982c-7412-a4b0-92c6807a272d",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 126,
+      "overriden_lines": 0
+    },
+    "c995ca2c00ccd04c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c904a-40cb-7161-912c-311899eb12ef",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "cdfb768e60e3b3c8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9026-d614-7263-8e8a-0867f3a38e50",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 62,
+      "overriden_lines": 0
+    },
+    "d43f438662be2b7b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9047-64d1-7052-9cf2-c8e79a7a59b7",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 49,
+      "total_deletions": 23,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
