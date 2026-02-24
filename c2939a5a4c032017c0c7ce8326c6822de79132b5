@@ -1,0 +1,23 @@
+site/components/Footer.tsx
+  316e1a8c46d5bbe5 1-14,16-17,19-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "c2939a5a4c032017c0c7ce8326c6822de79132b5",
+  "prompts": {
+    "316e1a8c46d5bbe5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9064-e37f-7ae3-80d4-b9736d5eea9e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 76,
+      "total_deletions": 4,
+      "accepted_lines": 76,
+      "overriden_lines": 0
+    }
+  }
+}
