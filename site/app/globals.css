@@ -123,7 +123,7 @@ a {
 .hero-content {
   position: relative;
   margin: 0 auto;
-  max-width: 900px;
+  max-width: 1080px;
   text-align: center;
 }
 
@@ -168,7 +168,7 @@ a {
 
 .install-block {
   margin: 3.25rem auto 0;
-  max-width: 860px;
+  max-width: 1020px;
   overflow: hidden;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -208,7 +208,9 @@ a {
 
 .terminal-body code {
   display: block;
-  overflow: visible;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 1.03rem;
   color: var(--fc-text);

@@ -51,17 +51,17 @@ export function Hero() {
       <div className="mx-auto w-full max-w-[1480px]">
         <div className="hero-content fade-in relative mx-auto max-w-[1120px] text-center">
           <span className="badge mb-7 inline-flex rounded-full border border-[var(--fc-accent)]/40 bg-[var(--fc-accent)]/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--fc-accent)]">v1.0 is now live</span>
-          <h1 className="m-0 text-balance font-serif text-[clamp(2rem,6vw,4.25rem)] leading-[1.06] tracking-[-0.015em] text-[var(--fc-text)]">
+          <h1 className="m-0 text-balance font-serif text-[clamp(2rem,5.8vw,4.2rem)] leading-[1.06] tracking-[-0.012em] text-[var(--fc-text)]">
             Encrypted env vars.
             <br />
-            <span className="accent-text text-[var(--fc-accent)]">Explicit sync. Zero guesswork.</span>
+            <span className="accent-text inline-block md:whitespace-nowrap text-[var(--fc-accent)]">Explicit sync. Zero guesswork.</span>
           </h1>
-          <p className="lead mx-auto mt-6 max-w-[920px] text-[clamp(1rem,1.6vw,1.45rem)] leading-[1.45] text-[var(--fc-muted)]">
+          <p className="lead mx-auto mt-5 max-w-[860px] text-[clamp(1rem,1.45vw,1 rem)] leading-[1.52] text-[var(--fc-muted)]">
             Stop pasting .env files in Slack. Env-Sync provides a CLI-first workflow to securely share and version environment variables
             across your entire team.
           </p>
 
-        <div className="install-block relative mx-auto mt-13 w-full max-w-[1280px] overflow-hidden rounded-2xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))] shadow-[0_30px_90px_rgba(0,0,0,0.58)]">
+        <div className="install-block relative mx-auto mt-12 w-full max-w-[1280px] overflow-hidden rounded-2xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))] shadow-[0_30px_90px_rgba(0,0,0,0.58)]">
           <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[var(--fc-accent)]/12" />
           <div className="terminal-header flex items-center gap-2 border-b border-white/10 bg-[linear-gradient(90deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] px-4 py-3">
               <span className="dot h-2.5 w-2.5 rounded-full bg-[#f26666]/55" />
@@ -69,8 +69,8 @@ export function Hero() {
               <span className="dot h-2.5 w-2.5 rounded-full bg-[#5acb7b]/55" />
               <span className="terminal-title ml-2 text-sm font-medium text-[var(--fc-muted)]">bash</span>
             </div>
-            <div className="terminal-body grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-5">
-              <code className="min-w-0 whitespace-nowrap text-left text-[0.9rem] leading-relaxed text-[var(--fc-text)]">
+            <div className="terminal-body flex items-center gap-4 px-5 py-5">
+              <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left text-[0.9rem] leading-relaxed text-[var(--fc-text)]">
                 <span className="prompt">$</span> {installCmd}
               </code>
               <button
