@@ -1,0 +1,64 @@
+site/README.md
+  cdfb768e60e3b3c8 2,4,6,12,14,16,21,23,25,32,54,56,58
+  c995ca2c00ccd04c 1,3
+  d43f438662be2b7b 5,7-11,13,15,17-20,22,24,26-31,33-53,55,57,59-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "0fba74fbd7ef4b3e633dc5905bbf672753a2ca80",
+  "prompts": {
+    "0209b3d19ffc1938": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c903a-a8e6-7163-95d4-3e3eba2dee1d",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "c995ca2c00ccd04c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c904a-40cb-7161-912c-311899eb12ef",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "cdfb768e60e3b3c8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9026-d614-7263-8e8a-0867f3a38e50",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    },
+    "d43f438662be2b7b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9047-64d1-7052-9cf2-c8e79a7a59b7",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
