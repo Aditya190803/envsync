@@ -13,7 +13,7 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
         <Link href="#" className="font-semibold tracking-tight text-[var(--fc-text)]">
-          Env-Sync
+          ENV Sync
         </Link>
         <div className="flex items-center gap-4">
           <nav className="hidden items-center gap-7 text-sm text-[var(--fc-muted)] md:flex">

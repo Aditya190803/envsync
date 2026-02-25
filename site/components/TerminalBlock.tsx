@@ -4,7 +4,6 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const script = `$ envsync init
-
 Recovery phrase generated and verified.
 
 $ envsync project create api
@@ -12,10 +11,13 @@ $ envsync project create api
 $ envsync set DATABASE_URL postgres://db.internal/app
 
 $ envsync push
-
 push complete (revision: 18)`;
 
-export function TerminalBlock() {
+type TerminalBlockProps = {
+  className?: string;
+};
+
+export function TerminalBlock({ className = "" }: TerminalBlockProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.45 });
 
@@ -47,14 +49,20 @@ export function TerminalBlock() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.35 }}
       transition={{ duration: 0.45 }}
-      className="rounded-2xl border border-white/10 bg-[#0f1319] p-4 shadow-[0_20px_70px_rgba(0,0,0,0.5)]"
+      className={`relative h-[420px] w-full overflow-hidden rounded-2xl border border-white/12 bg-[#0b1017] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.58)] ${className}`}
     >
-      <div className="mb-4 flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a66]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#ffcf4a]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#5adf8a]" />
+      <div className="relative mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ff6a66]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#ffcf4a]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#5adf8a]" />
+          <span className="ml-1 text-xs text-[#a8b0bf]">envsync-session</span>
+        </div>
+        <span className="rounded-full border border-[var(--fc-accent)]/40 bg-[var(--fc-accent)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--fc-accent)]">
+          live demo
+        </span>
       </div>
-      <pre className="min-h-[220px] whitespace-pre-wrap break-words font-mono text-sm leading-7 text-[#d8deea]">
+      <pre className="relative h-[calc(100%-3.1rem)] overflow-y-auto whitespace-pre-wrap break-words font-mono text-[0.92rem] leading-8 text-[#d8deea] [scrollbar-width:thin]">
         {typed}
         {started ? <span className="terminal-cursor align-[-2px]" aria-hidden="true" /> : null}
       </pre>

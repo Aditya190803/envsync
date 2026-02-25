@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { TerminalBlock } from "./TerminalBlock";
 
 export function Hero() {
   const installCmd = "curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash";
@@ -37,44 +38,59 @@ export function Hero() {
   }
 
   return (
-    <section className="hero relative px-6 pb-24 pt-14 sm:pt-20" id="home">
+    <section className="relative isolate overflow-hidden px-6 pb-20 pt-16 sm:pt-24" id="home">
       {toastMessage ? (
         <div
-          className="pointer-events-none fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-lg border border-[var(--fc-accent)]/40 bg-black/75 px-4 py-2 text-sm font-medium text-[var(--fc-text)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm"
+          className="pointer-events-none fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-lg border border-[var(--fc-accent)]/45 bg-black/80 px-4 py-2 text-sm font-medium text-[var(--fc-text)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm"
           role="status"
           aria-live="polite"
         >
           {toastMessage}
         </div>
       ) : null}
-      <div className="glow-sphere pointer-events-none absolute left-1/2 top-[-2rem] h-96 w-96 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,122,26,0.22)_0%,transparent_72%)] blur-3xl" />
-      <div className="mx-auto w-full max-w-[1480px]">
-        <div className="hero-content fade-in relative mx-auto max-w-[1120px] text-center">
-          <span className="badge mb-7 inline-flex rounded-full border border-[var(--fc-accent)]/40 bg-[var(--fc-accent)]/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--fc-accent)]">v1.0 is now live</span>
-          <h1 className="m-0 text-balance font-serif text-[clamp(2rem,5.8vw,4.2rem)] leading-[1.06] tracking-[-0.012em] text-[var(--fc-text)]">
-            Encrypted env vars.
-            <br />
-            <span className="accent-text inline-block md:whitespace-nowrap text-[var(--fc-accent)]">Explicit sync. Zero guesswork.</span>
-          </h1>
-          <p className="lead mx-auto mt-5 max-w-[860px] text-[clamp(1rem,1.45vw,1 rem)] leading-[1.52] text-[var(--fc-muted)]">
-            Stop pasting .env files in Slack. Env-Sync provides a CLI-first workflow to securely share and version environment variables
-            across your entire team.
-          </p>
-
-        <div className="install-block relative mx-auto mt-12 w-full max-w-[1280px] overflow-hidden rounded-2xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))] shadow-[0_30px_90px_rgba(0,0,0,0.58)]">
-          <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[var(--fc-accent)]/12" />
-          <div className="terminal-header flex items-center gap-2 border-b border-white/10 bg-[linear-gradient(90deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] px-4 py-3">
-              <span className="dot h-2.5 w-2.5 rounded-full bg-[#f26666]/55" />
-              <span className="dot h-2.5 w-2.5 rounded-full bg-[#f5c14a]/55" />
-              <span className="dot h-2.5 w-2.5 rounded-full bg-[#5acb7b]/55" />
-              <span className="terminal-title ml-2 text-sm font-medium text-[var(--fc-muted)]">bash</span>
+      <div className="pointer-events-none absolute left-1/2 top-[-9rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,122,26,0.2)_0%,rgba(255,122,26,0)_68%)] blur-3xl" />
+      <div className="pointer-events-none absolute inset-y-0 left-[-7%] w-1/2 bg-[radial-gradient(circle_at_30%_35%,rgba(255,122,26,0.08),transparent_58%)]" />
+      <div className="mx-auto w-full max-w-[1460px]">
+        <div className="grid items-start gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:gap-6 xl:gap-8">
+          <div className="relative pt-2 text-center lg:pt-5 lg:text-left">
+            <p className="inline-flex rounded-full border border-[var(--fc-accent)]/35 bg-[linear-gradient(90deg,rgba(255,122,26,0.2),rgba(255,122,26,0.07))] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.17em] text-[var(--fc-accent)]">
+              CLI-first secrets workflow
+            </p>
+            <h1 className="hero-serif mt-6 text-balance text-[clamp(2.35rem,5.2vw,4.9rem)] leading-[1.02] tracking-[-0.02em] text-[var(--fc-text)]">
+              Encrypted env vars.
+              <br />
+              <span className="inline-block text-[var(--fc-accent)] md:whitespace-nowrap">Explicit sync. Zero guesswork.</span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-balance text-[clamp(1rem,1.5vw,1.35rem)] leading-[1.62] text-[var(--fc-muted)] lg:mx-0">
+              Stop pasting .env files in Slack. Env-Sync gives your team an opinionated CLI flow to encrypt, share, and version secrets
+              safely.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-[var(--fc-muted)] lg:justify-start">
+              <span className="rounded-full border border-white/12 bg-white/[0.02] px-3 py-1">AES-256-GCM</span>
+              <span className="rounded-full border border-white/12 bg-white/[0.02] px-3 py-1">Argon2id key derivation</span>
+              <span className="rounded-full border border-white/12 bg-white/[0.02] px-3 py-1">No background sync</span>
             </div>
-            <div className="terminal-body flex items-center gap-4 px-5 py-5">
-              <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left text-[0.9rem] leading-relaxed text-[var(--fc-text)]">
+          </div>
+
+          <div className="relative mx-auto w-full max-w-none lg:mx-0 lg:pt-3">
+            <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_40%_35%,rgba(255,122,26,0.18),transparent_65%)] blur-2xl" />
+            <div className="relative rounded-[1.35rem] border border-white/12 bg-[#0b1017] p-2 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+              <TerminalBlock className="relative" />
+            </div>
+          </div>
+        </div>
+        <div className="mx-auto mt-12 w-full max-w-[1000px]">
+          <div className="relative overflow-hidden rounded-2xl border border-white/14 bg-[#0b1017] shadow-[0_28px_75px_rgba(0,0,0,0.55)]">
+            <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[var(--fc-accent)]/10" />
+            <div className="flex items-center justify-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3 text-center">
+              <span className="ml-2 text-sm font-medium text-[var(--fc-muted)]">Install Script</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-4 sm:px-5 sm:py-5">
+              <code className="min-w-0 flex-1 overflow-x-auto text-left font-mono text-[0.9rem] leading-relaxed text-[var(--fc-text)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <span className="prompt">$</span> {installCmd}
               </code>
               <button
-                className="copy-btn inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-white/18 bg-white/[0.02] text-[var(--fc-text)] transition hover:-translate-y-0.5 hover:border-[var(--fc-accent)]/65 hover:bg-[var(--fc-accent)]/12"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-white/18 bg-white/[0.02] text-[var(--fc-text)] transition hover:-translate-y-0.5 hover:border-[var(--fc-accent)]/65 hover:bg-[var(--fc-accent)]/12"
                 data-copy={installCmd}
                 aria-label="Copy install command"
                 type="button"
@@ -97,7 +113,7 @@ export function Hero() {
               </button>
             </div>
           </div>
-          <p className="sub-caption mt-6 text-sm text-[var(--fc-muted)]">Supports macOS, Linux, and Windows (WSL)</p>
+          <p className="mt-4 text-center text-sm text-[var(--fc-muted)] lg:text-left">Supports macOS, Linux, and Windows (WSL)</p>
         </div>
       </div>
     </section>
