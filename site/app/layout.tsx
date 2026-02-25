@@ -15,20 +15,20 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://envsync.dev"),
-  title: "Env-Sync | Encrypted env vars with explicit sync",
+  title: "ENV Sync | Sync env across devices & teams",
   description:
-    "Env-Sync is a terminal-first CLI for encrypted environment variables, explicit sync, restore, diagnostics, and auditable workflows.",
+    "ENV Sync is a CLI for syncing environment variables across devices and teams on a project basis.",
   openGraph: {
-    title: "Env-Sync",
-    description: "Encrypted env vars. Explicit sync. Zero guesswork.",
+    title: "ENV Sync",
+    description: "Sync env across devices & teams.",
     url: "https://envsync.dev",
-    siteName: "Env-Sync",
+    siteName: "ENV Sync",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Env-Sync",
-    description: "Encrypted env vars. Explicit sync. Zero guesswork.",
+    title: "ENV Sync",
+    description: "Sync env across devices & teams.",
   },
 };
 

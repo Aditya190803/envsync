@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Env-Sync Docs",
-  description: "Complete command reference for envsync CLI.",
+  title: "ENV Sync Docs",
+  description: "Complete command reference for ENV Sync CLI.",
 };
 
 function CodeBlock({ code }: { code: string }) {
@@ -77,7 +77,7 @@ export default function DocsPage() {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[color-mix(in_oklab,var(--fc-bg)_90%,black)]/85 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
           <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--fc-text)]">
-            Env-Sync
+            ENV Sync
           </Link>
           <Link href="/" className="text-sm text-[var(--fc-muted)] transition hover:text-[var(--fc-text)]">
             Home

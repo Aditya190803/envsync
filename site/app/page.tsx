@@ -3,32 +3,31 @@ import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
 import { SectionHeader } from "@/components/SectionHeader";
-import { TerminalBlock } from "@/components/TerminalBlock";
 
 const features = [
   {
-    title: "AES-256-GCM encryption",
-    description: "Secrets are encrypted before local or remote writes, with phrase-derived keys using Argon2id.",
+    title: "End-to-end encryption",
+    description: "Your secrets are encrypted before they leave your machine. Only you can read them.",
   },
   {
-    title: "Explicit push and pull",
-    description: "You decide exactly when synchronization happens, with no background surprises.",
+    title: "Control when sync happens",
+    description: "Explicit push and pull. No background processes, no surprises — you decide when to sync.",
   },
   {
-    title: "Machine restore",
-    description: "Onboard a second machine from your recovery phrase and remote encrypted state.",
+    title: "Restore from any device",
+    description: "Lost your laptop? Onboard a new machine in seconds with your recovery phrase.",
   },
   {
-    title: "Conflict-aware sync",
-    description: "Detect conflicts, choose override behavior, and preserve deterministic outcomes.",
+    title: "Never lose changes",
+    description: "Built-in conflict detection so you never accidentally overwrite your team's secrets.",
   },
   {
-    title: "Doctor diagnostics",
-    description: "Run fast health checks for config, active project state, and remote connectivity.",
+    title: "Quick health checks",
+    description: "Run diagnostics to verify your setup, connectivity, and config in seconds.",
   },
   {
-    title: "Structured audit logs",
-    description: "Every important action is append-logged in JSON for inspection and automation.",
+    title: "Know who did what",
+    description: "Structured audit logs tell you exactly what changed, when, and by whom.",
   },
 ];
 
@@ -65,16 +64,16 @@ export default function Home() {
         <section className="mx-auto w-full max-w-6xl px-6 pb-6">
           <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Encryption</p>
-              <p className="mt-2 text-2xl font-semibold">AES-256-GCM</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Open source</p>
+              <p className="mt-2 text-2xl font-semibold">Free forever</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Sync model</p>
-              <p className="mt-2 text-2xl font-semibold">Explicit Push/Pull</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Setup time</p>
+              <p className="mt-2 text-2xl font-semibold">Under 5 min</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Remote safety</p>
-              <p className="mt-2 text-2xl font-semibold">Revision-checked</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--fc-muted)]">Team size</p>
+              <p className="mt-2 text-2xl font-semibold">Any size</p>
             </div>
           </div>
         </section>
@@ -82,8 +81,8 @@ export default function Home() {
         <section id="features" className="mx-auto w-full max-w-6xl px-6 py-20">
           <SectionHeader
             eyebrow="Capabilities"
-            title="Everything needed for reliable secret workflows"
-            description="Built for teams that want strong cryptography, clean ergonomics, and explicit operational control."
+            title="Sync env across devices & teams"
+            description="Built for teams that want project-based sync, strong encryption, and explicit operational control."
           />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
@@ -96,8 +95,8 @@ export default function Home() {
           <div className="mx-auto w-full max-w-6xl px-6">
             <SectionHeader
               eyebrow="How it works"
-              title="Simple flow. Strong guarantees."
-              description="Three clear steps from local setup to secure cloud backup."
+              title="Project-based sync. Team-ready."
+              description="Three clear steps from local setup to secure team sync."
             />
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {steps.map((step, index) => (
@@ -109,17 +108,6 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
-
-        <section className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-20 lg:grid-cols-2">
-          <div>
-            <SectionHeader
-              eyebrow="Terminal demo"
-              title="Built for people who live in the shell"
-              description="Fast command surface, deterministic behavior, and output made for automation."
-            />
-          </div>
-          <TerminalBlock />
         </section>
 
         <section id="security" className="mx-auto w-full max-w-6xl px-6 py-20">
@@ -150,15 +138,15 @@ export default function Home() {
 
         <section className="mx-auto w-full max-w-6xl px-6 py-20">
           <div className="rounded-3xl border border-[var(--fc-accent)]/35 bg-[linear-gradient(120deg,rgba(255,122,26,0.2),rgba(255,122,26,0.05))] p-10 text-center shadow-[0_24px_80px_rgba(255,122,26,0.15)]">
-            <h2 className="text-3xl font-semibold sm:text-4xl">Ship with confidence. Keep secret operations explicit.</h2>
+            <h2 className="text-3xl font-semibold sm:text-4xl">Sync env across devices & teams.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-[var(--fc-muted)]">
-              Start with one install command and move to reliable encrypted sync across every environment your team touches.
+              Start with one install command and sync environment variables across your team on a project basis.
             </p>
             <a
               href="#home"
               className="mt-8 inline-flex rounded-full bg-[var(--fc-accent)] px-8 py-3 text-sm font-semibold text-[#2b1708] transition hover:brightness-110"
             >
-              Install Env-Sync
+              Install ENV Sync
             </a>
           </div>
         </section>
