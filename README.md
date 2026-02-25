@@ -1,8 +1,8 @@
-# Env-Sync
+# ENV Sync
 
-Env-Sync is a terminal-first CLI for managing environment variables with local encryption and explicit sync.
+ENV Sync is a CLI for syncing environment variables across devices and teams on a project basis.
 
-This repository includes a working Go MVP with local-first encrypted secrets, explicit sync, remote conflict handling, and restore support.
+This repository includes a working Go MVP with encrypted secrets, project-based sync, team collaboration, and restore support.
 
 ## Features
 

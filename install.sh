@@ -36,6 +36,23 @@ need_cmd() {
   fi
 }
 
+read_input() {
+  local __name prompt value
+  __name="$1"
+  prompt="$2"
+  value=""
+
+  if [ -r /dev/tty ]; then
+    printf "%s" "$prompt" >/dev/tty
+    IFS= read -r value </dev/tty || value=""
+  else
+    printf "%s" "$prompt"
+    IFS= read -r value || value=""
+  fi
+
+  printf -v "$__name" '%s' "$value"
+}
+
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -298,8 +315,7 @@ confirm_install() {
   else
     echo "  binaries: envsync"
   fi
-  printf "Continue? [y/N] "
-  read -r answer
+  read_input answer "Continue? [y/N] "
   case "$answer" in
     y|Y|yes|YES) ;;
     *) echo "aborted"; exit 1 ;;
@@ -382,8 +398,7 @@ prompt_convex_onboarding() {
 
   existing="$(normalize_convex_url "${ENVSYNC_CONVEX_URL:-}")"
   echo
-  printf "Configure Convex now so Env-Sync can push encrypted secrets? [Y/n] "
-  read -r answer
+  read_input answer "Configure Convex now so Env-Sync can push encrypted secrets? [Y/n] "
   case "$answer" in
     n|N|no|NO)
       echo "Skipping Convex onboarding."
@@ -393,11 +408,11 @@ prompt_convex_onboarding() {
 
   while true; do
     if [ -n "$existing" ]; then
-      printf "Convex URL [%s]: " "$existing"
+      read_input input "Convex URL [$existing]: "
     else
-      printf "Convex URL (https://<deployment>.convex.cloud): "
+      read_input input "Convex URL (https://<deployment>.convex.cloud): "
     fi
-    read -r input
+
     if [ -n "$input" ]; then
       url="$(normalize_convex_url "$input")"
     else
@@ -423,8 +438,7 @@ prompt_convex_onboarding() {
     fi
 
     echo "Could not reach Convex query endpoint at $(convex_query_endpoint "$url")."
-    printf "Try again? [Y/n] "
-    read -r answer
+    read_input answer "Try again? [Y/n] "
     case "$answer" in
       n|N|no|NO)
         echo "Skipping Convex onboarding."
@@ -451,8 +465,7 @@ prompt_cloud_push() {
     return
   fi
 
-  printf "Do you want to push these secrets to cloud with Env-Sync now? [y/N] "
-  read -r answer
+  read_input answer "Do you want to push these secrets to cloud with Env-Sync now? [y/N] "
   case "$answer" in
     y|Y|yes|YES)
       echo

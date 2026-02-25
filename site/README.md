@@ -1,6 +1,6 @@
-# Env-Sync site
+# ENV Sync site
 
-Marketing site and docs UI for Env-Sync, built with Next.js App Router + Tailwind CSS v4.
+Marketing site and docs UI for ENV Sync, built with Next.js App Router + Tailwind CSS v4.
 
 ## Stack
 
