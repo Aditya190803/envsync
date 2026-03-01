@@ -24,19 +24,19 @@ This repository includes a working Go MVP with encrypted secrets, project-based 
 ### From GitHub Releases (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash
+curl -fsSL https://envsync.adityamer.live/install | bash
 ```
 
 Install both binaries (`envsync` and `envsync-server`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash -s -- --with-server --yes
+curl -fsSL https://envsync.adityamer.live/install | bash -s -- --with-server --yes
 ```
 
 Pin to a specific release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash -s -- --version v0.1.0 --yes
+curl -fsSL https://envsync.adityamer.live/install | bash -s -- --version v0.1.0 --yes
 ```
 
 Installer defaults:
@@ -58,6 +58,7 @@ Optional installer environment variables:
 Installer integrity behavior:
 
 - Verifies downloaded release assets against `checksums.txt` by default
+- If `checksums.txt` is unavailable, falls back to GitHub release asset SHA-256 digest metadata
 - Supports `sha256sum` or `shasum -a 256`
 - Exits on checksum mismatch
 

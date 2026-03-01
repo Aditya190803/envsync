@@ -209,8 +209,43 @@ resolve_checksums_url() {
   fi
 }
 
+find_github_asset_digest() {
+  local api raw digest
+  if [ -n "$BASE_URL" ]; then
+    return 1
+  fi
+
+  api="https://api.github.com/repos/${REPO}/releases/tags/${TAG}"
+  if ! raw="$(curl -fsSL "$api")"; then
+    return 1
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    digest="$(printf '%s\n' "$raw" | jq -r --arg name "$ASSET_NAME" '.assets[] | select(.name == $name) | .digest // empty' | head -n1)"
+  else
+    digest="$(printf '%s\n' "$raw" | awk -v target="$ASSET_NAME" '
+      $0 ~ "\"name\":[[:space:]]*\"" target "\"" { found=1 }
+      found && $0 ~ /"digest":[[:space:]]*"sha256:/ {
+        sub(/.*"digest":[[:space:]]*"sha256:/, "", $0)
+        sub(/".*/, "", $0)
+        print $0
+        exit
+      }
+    ' | head -n1)"
+  fi
+
+  digest="${digest#sha256:}"
+
+  if [ -n "$digest" ]; then
+    printf '%s' "$digest"
+    return 0
+  fi
+
+  return 1
+}
+
 verify_checksum() {
-  local file sha_file expected actual line
+  local file sha_file expected actual line github_digest
   file="$1"
   if [ "$SKIP_VERIFY" = true ]; then
     echo "warning: checksum verification skipped"
@@ -220,31 +255,43 @@ verify_checksum() {
 
   sha_file="$(mktemp)"
   if ! curl -fsSL "$CHECKSUMS_URL" -o "$sha_file"; then
-    echo "error: failed to download checksums: $CHECKSUMS_URL" >&2
-    echo "hint: publish checksums.txt in release assets or run with --skip-verify" >&2
     rm -f "$sha_file"
-    exit 1
-  fi
-
-  line=""
-  while IFS= read -r raw; do
-    [ -z "$raw" ] && continue
-    set -- $raw
-    [ "$#" -lt 2 ] && continue
-    candidate="$2"
-    candidate="${candidate#\\*}"
-    candidate="${candidate#./}"
-    if [ "$candidate" = "$ASSET_NAME" ]; then
-      line="$raw"
-      break
+    if github_digest="$(find_github_asset_digest)"; then
+      expected="$github_digest"
+      echo "warning: checksums.txt unavailable; using GitHub release asset digest for ${ASSET_NAME}" >&2
+    else
+      echo "error: failed to download checksums: $CHECKSUMS_URL" >&2
+      echo "hint: publish checksums.txt in release assets or run with --skip-verify" >&2
+      exit 1
     fi
-  done <"$sha_file"
-  if [ -z "$line" ]; then
-    echo "error: checksum entry for ${ASSET_NAME} not found in checksums file" >&2
+  else
+    line=""
+    while IFS= read -r raw; do
+      [ -z "$raw" ] && continue
+      set -- $raw
+      [ "$#" -lt 2 ] && continue
+      candidate="$2"
+      candidate="${candidate#\\*}"
+      candidate="${candidate#./}"
+      if [ "$candidate" = "$ASSET_NAME" ]; then
+        line="$raw"
+        break
+      fi
+    done <"$sha_file"
+
     rm -f "$sha_file"
-    exit 1
+    if [ -z "$line" ]; then
+      if github_digest="$(find_github_asset_digest)"; then
+        expected="$github_digest"
+        echo "warning: checksum entry missing for ${ASSET_NAME}; using GitHub release asset digest" >&2
+      else
+        echo "error: checksum entry for ${ASSET_NAME} not found in checksums file" >&2
+        exit 1
+      fi
+    else
+      expected="$(echo "$line" | awk '{print $1}')"
+    fi
   fi
-  expected="$(echo "$line" | awk '{print $1}')"
 
   if command -v sha256sum >/dev/null 2>&1; then
     actual="$(sha256sum "$file" | awk '{print $1}')"
@@ -256,7 +303,6 @@ verify_checksum() {
     exit 1
   fi
 
-  rm -f "$sha_file"
   if [ "$expected" != "$actual" ]; then
     echo "error: checksum mismatch for ${ASSET_NAME}" >&2
     exit 1

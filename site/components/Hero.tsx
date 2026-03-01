@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { TerminalBlock } from "./TerminalBlock";
 
 export function Hero() {
-  const installCmd = "curl -fsSL https://raw.githubusercontent.com/Aditya190803/envsync/main/install.sh | bash";
+  const installCmd = "curl -fsSL https://envsync.adityamer.live/install | bash";
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
