@@ -42,7 +42,7 @@ const steps = [
   },
   {
     title: "Sync with control",
-    detail: "Push and pull to file, HTTP, or Convex backends with optimistic concurrency checks.",
+    detail: "Push and pull to file, HTTP, or Cloudflare Worker backends with optimistic concurrency checks.",
   },
 ];
 
@@ -129,7 +129,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold">Remote integrations</h3>
               <ul className="mt-4 space-y-2 text-sm text-[var(--fc-muted)]">
                 <li>HTTP remote backend with bearer token support</li>
-                <li>Convex backup transport with deploy key + API key modes</li>
+                <li>Cloudflare Worker + KV store backend</li>
                 <li>Restore command for second-machine recovery</li>
               </ul>
             </article>

@@ -17,7 +17,7 @@ This repository includes a working Go MVP with encrypted secrets, project-based 
 - Restore flow for second-machine onboarding (`envsync restore`)
 - Structured JSON audit logging
 - Optional HTTP remote backend (`envsync-server`)
-- Optional Convex cloud backup
+- Cloud mode onboarding via `envsync login`
 
 ## Install
 
@@ -44,7 +44,7 @@ Installer defaults:
 - Install dir: `~/.local/bin`
 - Version: latest release
 - OS/arch: auto-detected (`linux`/`darwin`, `amd64`/`arm64`)
-- If local `.env*` files are found (excluding `*example*`), installer prompts whether you want cloud-push setup steps
+- Post-install next steps: `envsync init` then `envsync login`
 
 Optional installer environment variables:
 
@@ -66,7 +66,7 @@ Default installer repo: `Aditya190803/envsync`.
 ### Build from source
 
 ```bash
-go build -o envsync ./cmd/envsync
+go build -ldflags "-X main.version=$(git describe --tags --always 2>/dev/null || echo dev)" -o envsync ./cmd/envsync
 go build -o envsync-server ./cmd/envsync-server
 ```
 
@@ -75,6 +75,9 @@ go build -o envsync-server ./cmd/envsync-server
 ```bash
 # initialize vault (prints recovery phrase once)
 envsync init
+
+# sign in for cloud sync
+envsync login
 
 # create/select project
 envsync project create api
@@ -110,35 +113,58 @@ export ENVSYNC_ACTOR="<user-or-service-id>"
 
 ```text
 envsync init
+envsync login
+envsync logout
+envsync whoami
 envsync doctor
+envsync doctor --json
 envsync restore
 
 envsync project create <name>
 envsync project list
 envsync project use <name>
+envsync project delete <name>
 envsync team create <name>
 envsync team list
 envsync team use <name>
 envsync team add-member <team> <actor> <role>
+envsync team remove-member <team> <actor>
 envsync team list-members [team]
 
 envsync env create <name>
 envsync env use <name>
+envsync env list
 
-envsync set <KEY> <value>
+envsync set <KEY> <value> [--expires-at <RFC3339|duration>]
 envsync rotate <KEY> <value>
 envsync get <KEY>
 envsync delete <KEY>
 envsync list [--show]
 envsync load
+envsync import <file>
+envsync export <file>
 envsync history <KEY>
 envsync rollback <KEY> --version <n>
+envsync diff
 
 envsync push [--force]
 envsync pull [--force-remote]
 envsync phrase save
 envsync phrase clear
 ```
+
+Remote mode selection:
+
+```bash
+# choose backend explicitly: cloud|file|http
+export ENVSYNC_REMOTE_MODE=cloud
+```
+
+Mode defaults:
+
+- `http` when `ENVSYNC_REMOTE_URL` is set (self-host compatibility)
+- `cloud` when `ENVSYNC_CLOUD_URL` is set and a cloud session exists
+- `file` otherwise
 
 ## Storage model
 
@@ -149,6 +175,13 @@ Local state:
 Audit log:
 
 - `~/.config/envsync/audit.log`
+- rotation/retention controls:
+  - `ENVSYNC_AUDIT_MAX_BYTES` (default `1048576`)
+  - `ENVSYNC_AUDIT_MAX_FILES` (default `5`)
+  - `ENVSYNC_AUDIT_ROTATE_INTERVAL` (default `24h`)
+  - `ENVSYNC_AUDIT_RETENTION_DAYS` (default `30`)
+- permission auto-fix toggle:
+  - `ENVSYNC_FIX_PERMISSIONS=true`
 
 Default file remote:
 
@@ -241,6 +274,19 @@ Client setup:
 export ENVSYNC_REMOTE_URL=http://127.0.0.1:8080
 ```
 
+Client retry/backoff tuning (for transient remote failures):
+
+```bash
+# total attempts, including the first request (default: 3)
+export ENVSYNC_REMOTE_RETRY_MAX_ATTEMPTS=3
+
+# base delay used for exponential backoff (default: 200ms)
+export ENVSYNC_REMOTE_RETRY_BASE_DELAY=200ms
+
+# cap for backoff delay before jitter (default: 2s)
+export ENVSYNC_REMOTE_RETRY_MAX_DELAY=2s
+```
+
 Optional bearer token auth:
 
 ```bash
@@ -281,40 +327,87 @@ Operational endpoints:
 
 Each response includes `X-Request-Id` for traceability.
 
-## Convex cloud backup
+## EnvSync Cloud API (Render deploy)
 
-This repo includes Convex functions in [`convex/backup.ts`](./convex/backup.ts) and schema in [`convex/schema.ts`](./convex/schema.ts).
+This repo now includes a managed-cloud API service in [`cmd/envsync-cloud/main.go`](./cmd/envsync-cloud/main.go) with:
 
-Deploy from this repo:
+- `GET /healthz`
+- `GET /v1/me` (bearer auth required)
+- `GET /v1/store?project=<name>`
+- `PUT /v1/store?project=<name>` with `If-Match` optimistic concurrency
+- `POST /v1/tokens` (create PAT; returns raw token once)
+- `DELETE /v1/tokens/:id` (revoke PAT)
 
-```bash
-npm install convex
-npx convex dev
-```
+Optional vault ownership routing:
+- `organization_id=<uuid>` for org-scoped vaults
+- `team_id=<uuid>` for team-scoped vaults
+- `organization_id` and `team_id` are mutually exclusive
 
-Client setup:
+OpenAPI v1 contract is published at [`cmd/envsync-cloud/openapi.v1.yaml`](./cmd/envsync-cloud/openapi.v1.yaml).
 
-```bash
-export ENVSYNC_CONVEX_URL=https://<your-deployment>.convex.cloud
-```
-
-Optional backup API key:
-
-```bash
-# set in Convex env
-npx convex env set ENVSYNC_CONVEX_API_KEY supersecret
-
-# set on client
-export ENVSYNC_CONVEX_API_KEY=supersecret
-```
-
-Optional Convex deploy key + function path overrides:
+### Local run
 
 ```bash
-export ENVSYNC_CONVEX_DEPLOY_KEY=<deploy-key>
-export ENVSYNC_CONVEX_GET_PATH=backup:getStore
-export ENVSYNC_CONVEX_PUT_PATH=backup:putStore
+export ENVSYNC_CLOUD_INMEMORY=true
+export ENVSYNC_CLOUD_DEV_TOKEN=dev-token
+go run ./cmd/envsync-cloud
 ```
+
+Point CLI to cloud:
+
+```bash
+export ENVSYNC_CLOUD_URL=http://127.0.0.1:8081
+export ENVSYNC_REMOTE_MODE=cloud
+export ENVSYNC_CLOUD_ACCESS_TOKEN=dev-token
+envsync login
+```
+
+Issue a PAT (once DB mode is enabled):
+
+```bash
+curl -sS -X POST "$ENVSYNC_CLOUD_URL/v1/tokens" \
+  -H "Authorization: Bearer $ENVSYNC_CLOUD_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"scopes":["profile:read","store:read","store:write"],"expires_at":"2026-12-31T23:59:59Z"}'
+```
+
+### Render deploy
+
+Use the included [`render.yaml`](./render.yaml), then set:
+
+- `ENVSYNC_CLOUD_PAT_PEPPER` (required for PAT validation)
+- `ENVSYNC_CLOUD_RATE_LIMIT_RPM` (default `240`)
+- `ENVSYNC_CLOUD_RATE_LIMIT_BURST` (default `40`)
+- `ENVSYNC_CLOUD_MAX_BODY_BYTES` (default `1048576`)
+- `ENVSYNC_CLOUD_JWT_ISSUER`
+- `ENVSYNC_CLOUD_JWT_AUDIENCE` (or set `ENVSYNC_CLOUD_JWT_SKIP_AUD_CHECK=true` for bring-up only)
+
+Optional bootstrap token:
+
+- `ENVSYNC_CLOUD_DEV_TOKEN` (remove after OIDC is configured)
+
+Operational runbooks:
+
+- Cloud dashboards/alerts: [`docs/cloud-operations.md`](./docs/cloud-operations.md)
+- Backup/restore + credential rotation: [`docs/cloud-backup-restore-runbook.md`](./docs/cloud-backup-restore-runbook.md)
+
+## Legacy self-host compatibility (advanced)
+
+Self-host HTTP remotes remain supported during migration using:
+
+```bash
+export ENVSYNC_REMOTE_MODE=http
+export ENVSYNC_REMOTE_URL=https://<self-host-endpoint>
+export ENVSYNC_REMOTE_TOKEN=<auth-token>
+```
+
+Default onboarding remains cloud-first with `envsync login`.
+
+### Worker cutover timeline
+
+- Cloud API GA date: **2026-03-15**
+- Legacy Worker deprecation date: **2026-04-30**
+- One full release-cycle notice is provided before final removal.
 
 ## Release asset naming for installer
 

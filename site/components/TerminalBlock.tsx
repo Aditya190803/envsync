@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const script = `$ envsync init
 Recovery phrase generated and verified.
@@ -13,6 +13,15 @@ $ envsync set DATABASE_URL postgres://db.internal/app
 $ envsync push
 push complete (revision: 18)`;
 
+/** How long (ms) to hold the completed text before fading out */
+const HOLD_DELAY = 2500;
+/** How long (ms) the fade-out transition takes */
+const FADE_DURATION = 600;
+/** How long (ms) to keep the screen blank before restarting */
+const BLANK_PAUSE = 400;
+
+type Phase = "typing" | "holding" | "fading" | "blank";
+
 type TerminalBlockProps = {
   className?: string;
 };
@@ -22,14 +31,22 @@ export function TerminalBlock({ className = "" }: TerminalBlockProps) {
   const inView = useInView(ref, { once: true, amount: 0.45 });
 
   const [typedLen, setTypedLen] = useState(0);
+  const [phase, setPhase] = useState<Phase>("typing");
 
   const started = inView;
-  const done = typedLen >= script.length;
   const typed = useMemo(() => script.slice(0, typedLen), [typedLen]);
 
+  const restart = useCallback(() => {
+    setTypedLen(0);
+    setPhase("typing");
+  }, []);
+
+  /* ── typing phase ── */
   useEffect(() => {
-    if (!started || done) {
-      return;
+    if (!started || phase !== "typing") return;
+    if (typedLen >= script.length) {
+      const timer = window.setTimeout(() => setPhase("holding"), 0);
+      return () => window.clearTimeout(timer);
     }
 
     const nextChar = script[typedLen];
@@ -40,7 +57,31 @@ export function TerminalBlock({ className = "" }: TerminalBlockProps) {
     }, delay);
 
     return () => window.clearTimeout(timer);
-  }, [started, done, typedLen]);
+  }, [started, phase, typedLen]);
+
+  /* ── holding phase: wait before fading ── */
+  useEffect(() => {
+    if (phase !== "holding") return;
+    const timer = window.setTimeout(() => setPhase("fading"), HOLD_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  /* ── fading phase: wait for CSS transition then blank ── */
+  useEffect(() => {
+    if (phase !== "fading") return;
+    const timer = window.setTimeout(() => setPhase("blank"), FADE_DURATION);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  /* ── blank phase: short pause then restart ── */
+  useEffect(() => {
+    if (phase !== "blank") return;
+    const timer = window.setTimeout(restart, BLANK_PAUSE);
+    return () => window.clearTimeout(timer);
+  }, [phase, restart]);
+
+  const textOpacity =
+    phase === "fading" || phase === "blank" ? 0 : 1;
 
   return (
     <motion.div
@@ -62,9 +103,17 @@ export function TerminalBlock({ className = "" }: TerminalBlockProps) {
           live demo
         </span>
       </div>
-      <pre className="relative h-[calc(100%-3.1rem)] overflow-y-auto whitespace-pre-wrap break-words font-mono text-[0.92rem] leading-8 text-[#d8deea] [scrollbar-width:thin]">
+      <pre
+        className="relative h-[calc(100%-3.1rem)] overflow-y-auto whitespace-pre-wrap break-words font-mono text-[0.92rem] leading-8 text-[#d8deea] [scrollbar-width:thin]"
+        style={{
+          opacity: textOpacity,
+          transition: `opacity ${FADE_DURATION}ms ease-in-out`,
+        }}
+      >
         {typed}
-        {started ? <span className="terminal-cursor align-[-2px]" aria-hidden="true" /> : null}
+        {started && phase !== "blank" ? (
+          <span className="terminal-cursor align-[-2px]" aria-hidden="true" />
+        ) : null}
       </pre>
     </motion.div>
   );

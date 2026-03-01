@@ -18,6 +18,9 @@ const usageText = `envsync - encrypted env var sync
 
 Usage:
   envsync init
+  envsync login
+  envsync logout
+  envsync whoami
   envsync project create <name>
   envsync project list
   envsync project use <name>
@@ -45,6 +48,9 @@ Usage:
 
 const commands = [
   { command: "envsync init", description: "Initialize envsync on this machine and create local encrypted state." },
+  { command: "envsync login", description: "Sign in for cloud sync and save a local session." },
+  { command: "envsync logout", description: "Sign out and clear stored cloud session." },
+  { command: "envsync whoami", description: "Show your authenticated cloud identity." },
   { command: "envsync project create <name>", description: "Create a new project namespace." },
   { command: "envsync project list", description: "List all available projects." },
   { command: "envsync project use <name>", description: "Set the active project for subsequent commands." },
