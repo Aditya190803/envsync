@@ -8,16 +8,15 @@ BASE_URL="${ENVSYNC_INSTALL_BASE_URL:-}"
 CHECKSUMS_URL="${ENVSYNC_INSTALL_CHECKSUMS_URL:-}"
 SKIP_VERIFY="${ENVSYNC_INSTALL_SKIP_VERIFY:-false}"
 WITH_SERVER=false
+WITH_CLOUD=false
 ASSUME_YES=false
-ENV_FILES=()
-ENVSYNC_PROFILE="$HOME/.config/envsync/env"
 
 usage() {
   cat <<'EOF'
 Install Env-Sync from GitHub Releases.
 
 Usage:
-  install.sh [--repo <owner/repo>] [--version <tag|latest>] [--install-dir <dir>] [--base-url <url>] [--checksums-url <url>] [--skip-verify] [--with-server] [--yes]
+  install.sh [--repo <owner/repo>] [--version <tag|latest>] [--install-dir <dir>] [--base-url <url>] [--checksums-url <url>] [--skip-verify] [--with-server] [--with-cloud] [--yes]
 
 Env vars:
   ENVSYNC_INSTALL_REPO     GitHub repo (default: Aditya190803/envsync)
@@ -82,6 +81,10 @@ parse_args() {
         ;;
       --with-server)
         WITH_SERVER=true
+        shift
+        ;;
+      --with-cloud)
+        WITH_CLOUD=true
         shift
         ;;
       --yes)
@@ -171,6 +174,7 @@ choose_asset() {
     "${name}-${TAG}-${OS}-${ARCH}"
     "${name}_${OS}_${ARCH}"
     "${name}-${OS}-${ARCH}"
+    "${name}"
   )
 
   for asset in "${CANDIDATES[@]}"; do
@@ -311,7 +315,13 @@ confirm_install() {
     echo "  integrity: checksum verification enabled"
   fi
   if [ "$WITH_SERVER" = true ]; then
-    echo "  binaries: envsync, envsync-server"
+    if [ "$WITH_CLOUD" = true ]; then
+      echo "  binaries: envsync, envsync-server, envsync-cloud"
+    else
+      echo "  binaries: envsync, envsync-server"
+    fi
+  elif [ "$WITH_CLOUD" = true ]; then
+    echo "  binaries: envsync, envsync-cloud"
   else
     echo "  binaries: envsync"
   fi
@@ -319,171 +329,6 @@ confirm_install() {
   case "$answer" in
     y|Y|yes|YES) ;;
     *) echo "aborted"; exit 1 ;;
-  esac
-}
-
-detect_env_files() {
-  while IFS= read -r f; do
-    ENV_FILES+=("${f#./}")
-  done < <(find . -maxdepth 1 -type f -name ".env*" ! -iname "*example*" | sort)
-}
-
-shell_rc_file() {
-  local sh
-  sh="$(basename "${SHELL:-}")"
-  case "$sh" in
-    zsh) echo "$HOME/.zshrc" ;;
-    bash) echo "$HOME/.bashrc" ;;
-    *) echo "$HOME/.profile" ;;
-  esac
-}
-
-normalize_convex_url() {
-  local raw
-  raw="$(echo "$1" | sed 's/[[:space:]]*$//')"
-  raw="${raw%/}"
-  echo "$raw"
-}
-
-convex_query_endpoint() {
-  local base
-  base="$(normalize_convex_url "$1")"
-  if [[ "$base" == */api ]]; then
-    echo "$base/query"
-  else
-    echo "$base/api/query"
-  fi
-}
-
-validate_convex_url() {
-  local url endpoint payload
-  url="$1"
-  endpoint="$(convex_query_endpoint "$url")"
-  payload='{"path":"backup:getStore","args":{},"format":"json"}'
-  curl -fsS --max-time 8 -H "Content-Type: application/json" -d "$payload" "$endpoint" >/dev/null
-}
-
-persist_envsync_var() {
-  local name value tmp
-  name="$1"
-  value="$2"
-  mkdir -p "$(dirname "$ENVSYNC_PROFILE")"
-  touch "$ENVSYNC_PROFILE"
-  tmp="$(mktemp)"
-  grep -v "^export ${name}=" "$ENVSYNC_PROFILE" >"$tmp" || true
-  printf "export %s=%q\n" "$name" "$value" >>"$tmp"
-  mv "$tmp" "$ENVSYNC_PROFILE"
-  chmod 600 "$ENVSYNC_PROFILE"
-}
-
-ensure_profile_sourced() {
-  local rc source_line
-  rc="$(shell_rc_file)"
-  source_line="[ -f \"$ENVSYNC_PROFILE\" ] && . \"$ENVSYNC_PROFILE\""
-  touch "$rc"
-  if ! grep -Fq "$source_line" "$rc"; then
-    {
-      echo
-      echo "# envsync installer config"
-      echo "$source_line"
-    } >>"$rc"
-  fi
-}
-
-prompt_convex_onboarding() {
-  local answer existing input url
-  if [ "$ASSUME_YES" = true ]; then
-    return
-  fi
-
-  existing="$(normalize_convex_url "${ENVSYNC_CONVEX_URL:-}")"
-  echo
-  read_input answer "Configure Convex now so Env-Sync can push encrypted secrets? [Y/n] "
-  case "$answer" in
-    n|N|no|NO)
-      echo "Skipping Convex onboarding."
-      return
-      ;;
-  esac
-
-  while true; do
-    if [ -n "$existing" ]; then
-      read_input input "Convex URL [$existing]: "
-    else
-      read_input input "Convex URL (https://<deployment>.convex.cloud): "
-    fi
-
-    if [ -n "$input" ]; then
-      url="$(normalize_convex_url "$input")"
-    else
-      url="$existing"
-    fi
-
-    if [ -z "$url" ]; then
-      echo "Please enter a Convex URL."
-      continue
-    fi
-    if [[ ! "$url" =~ ^https?:// ]]; then
-      echo "URL must start with http:// or https://"
-      continue
-    fi
-
-    if validate_convex_url "$url"; then
-      persist_envsync_var "ENVSYNC_CONVEX_URL" "$url"
-      ensure_profile_sourced
-      echo "Saved ENVSYNC_CONVEX_URL to $ENVSYNC_PROFILE"
-      echo "New terminals will load it automatically."
-      echo "Current shell: export ENVSYNC_CONVEX_URL=$url"
-      break
-    fi
-
-    echo "Could not reach Convex query endpoint at $(convex_query_endpoint "$url")."
-    read_input answer "Try again? [Y/n] "
-    case "$answer" in
-      n|N|no|NO)
-        echo "Skipping Convex onboarding."
-        break
-        ;;
-    esac
-  done
-}
-
-prompt_cloud_push() {
-  detect_env_files
-  if [ "${#ENV_FILES[@]}" -eq 0 ]; then
-    return
-  fi
-
-  echo
-  echo "Detected local env files (excluding examples):"
-  for f in "${ENV_FILES[@]}"; do
-    echo "  - $f"
-  done
-
-  if [ "$ASSUME_YES" = true ]; then
-    echo "Non-interactive mode enabled; skipping cloud push prompt."
-    return
-  fi
-
-  read_input answer "Do you want to push these secrets to cloud with Env-Sync now? [y/N] "
-  case "$answer" in
-    y|Y|yes|YES)
-      echo
-      echo "Next steps:"
-      echo "  1) Configure remote:"
-      echo "     export ENVSYNC_CONVEX_URL=https://<your-deployment>.convex.cloud"
-      echo "     # or: export ENVSYNC_REMOTE_URL=http://127.0.0.1:8080"
-      echo "  2) Initialize and pick project:"
-      echo "     envsync init"
-      echo "     envsync project create <name>"
-      echo "     envsync project use <name>"
-      echo "  3) Add secrets and push:"
-      echo "     envsync set KEY value"
-      echo "     envsync push"
-      ;;
-    *)
-      echo "Skipping cloud push setup."
-      ;;
   esac
 }
 
@@ -501,17 +346,18 @@ main() {
   if [ "$WITH_SERVER" = true ]; then
     download_and_install "envsync-server"
   fi
+  if [ "$WITH_CLOUD" = true ]; then
+    download_and_install "envsync-cloud"
+  fi
 
   echo
-  echo "Done."
+  echo "Install complete."
   echo "Add to PATH if needed:"
   echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
   echo
-  echo "Check:"
-  echo "  envsync help"
-
-  prompt_convex_onboarding
-  prompt_cloud_push
+  echo "Next steps:"
+  echo "  envsync init"
+  echo "  envsync login"
 }
 
 main "$@"
