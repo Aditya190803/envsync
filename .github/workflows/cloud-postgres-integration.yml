@@ -27,7 +27,7 @@ jobs:
         env:
           POSTGRES_DB: envsync
           POSTGRES_USER: envsync
-          POSTGRES_PASSWORD: envsync
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -47,6 +47,6 @@ jobs:
 
       - name: Run env-gated cloud integration test
         env:
-          ENVSYNC_CLOUD_DATABASE_URL: postgresql://envsync:envsync@localhost:5432/envsync?sslmode=disable
+          ENVSYNC_CLOUD_DATABASE_URL: postgresql://envsync@localhost:5432/envsync?sslmode=disable
           ENVSYNC_CLOUD_PAT_PEPPER: ci-test-pepper
         run: go test ./cmd/envsync-cloud -run TestPostgresPATTeamStoreAuthorization -count=1
