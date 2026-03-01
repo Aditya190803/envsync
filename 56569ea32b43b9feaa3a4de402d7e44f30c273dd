@@ -1,0 +1,37 @@
+cmd/envsync-server/main.go
+  4859138a91327bac 90,226,231-246,399-400
+  da717983b98ede67 6,16,22,132-151,156-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "56569ea32b43b9feaa3a4de402d7e44f30c273dd",
+  "prompts": {
+    "4859138a91327bac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c983a-a029-72f0-ab81-f734afeeeb04",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 67,
+      "overriden_lines": 0
+    },
+    "da717983b98ede67": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9843-d791-7162-b14e-85e160009dce",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    }
+  }
+}
