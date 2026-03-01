@@ -1,0 +1,11 @@
+{
+    "name": "envsync-store",
+    "main": "src/index.ts",
+    "compatibility_date": "2024-03-20",
+    "kv_namespaces": [
+        {
+            "binding": "STORE",
+            "id": "YOUR_KV_NAMESPACE_ID"
+        }
+    ]
+}

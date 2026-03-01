@@ -1,0 +1,12 @@
+# Local build artifacts
+/envsync
+/envsync-server
+
+# Go test/build cache artifacts
+*.test
+*.out
+
+# Node dependencies
+node_modules/
+site/node_modules/
+worker/node_modules/
