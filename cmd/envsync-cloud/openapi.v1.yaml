@@ -1,0 +1,272 @@
+openapi: 3.1.0
+info:
+  title: EnvSync Cloud API
+  version: 1.0.0
+servers:
+  - url: https://api.envsync.dev
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /v1/me:
+    get:
+      summary: Current authenticated identity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                        nullable: true
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        organization_id:
+                          type: string
+                        role:
+                          type: string
+                  teams:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        team_id:
+                          type: string
+                        role:
+                          type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/store:
+    get:
+      summary: Read encrypted project store
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: project
+          schema:
+            type: string
+        - in: query
+          name: organization_id
+          schema:
+            type: string
+        - in: query
+          name: team_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Store snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoteStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      summary: Update encrypted project store
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: project
+          schema:
+            type: string
+        - in: query
+          name: organization_id
+          schema:
+            type: string
+        - in: query
+          name: team_id
+          schema:
+            type: string
+        - in: header
+          name: If-Match
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoteStore"
+      responses:
+        "200":
+          description: Store snapshot saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoteStore"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /v1/tokens:
+    post:
+      summary: Create personal access token
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Token created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  token:
+                    type: string
+                  token_prefix:
+                    type: string
+                  scopes:
+                    type: array
+                    items:
+                      type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /v1/tokens/{id}:
+    delete:
+      summary: Revoke personal access token
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Token revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PAT
+  schemas:
+    RemoteStore:
+      type: object
+      required:
+        - version
+        - revision
+        - projects
+      properties:
+        version:
+          type: integer
+        revision:
+          type: integer
+        salt_b64:
+          type: string
+          nullable: true
+        key_check_b64:
+          type: string
+          nullable: true
+        teams:
+          type: object
+          additionalProperties: true
+        projects:
+          type: object
+          additionalProperties: true
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - request_id
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+  responses:
+    Unauthorized:
+      description: Missing, expired, or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Authenticated but no permission for resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found in current scope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Revision mismatch
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

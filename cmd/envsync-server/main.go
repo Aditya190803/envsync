@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -12,11 +13,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -84,7 +87,7 @@ func main() {
 	if rpm > 0 {
 		rps = float64(rpm) / 60.0
 	}
-	limiter := newRateLimiter(rps, float64(maxInt(1, burst)))
+	limiter := newRateLimiter(rps, float64(max(1, burst)))
 
 	s := &server{
 		storePath:       storePath,
@@ -126,9 +129,34 @@ func main() {
 	} else {
 		log.Printf("rate limit: disabled")
 	}
-	if err := http.ListenAndServe(addr, handler); err != nil {
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	go func() {
+		<-shutdownSignal()
+		log.Printf("shutdown signal received")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("graceful shutdown failed: %v", err)
+		}
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+func shutdownSignal() <-chan os.Signal {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	return ch
 }
 
 func (s *server) withMiddleware(next http.Handler) http.Handler {
@@ -195,11 +223,27 @@ func newRateLimiter(ratePerSec, capacity float64) *rateLimiter {
 	if capacity <= 0 {
 		capacity = 1
 	}
-	return &rateLimiter{
+	r := &rateLimiter{
 		ratePerSec: math.Max(0, ratePerSec),
 		capacity:   capacity,
 		buckets:    map[string]*tokenBucket{},
 	}
+	if r.ratePerSec > 0 {
+		go func() {
+			for {
+				time.Sleep(5 * time.Minute)
+				r.mu.Lock()
+				now := time.Now()
+				for k, b := range r.buckets {
+					if now.Sub(b.last).Seconds() > (r.capacity/r.ratePerSec)*2 {
+						delete(r.buckets, k)
+					}
+				}
+				r.mu.Unlock()
+			}
+		}()
+	}
+	return r
 }
 
 func (r *rateLimiter) enabled() bool {
@@ -269,13 +313,6 @@ func getenvInt(name string, fallback int) int {
 		return fallback
 	}
 	return v
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func (s *server) handleStore(w http.ResponseWriter, r *http.Request) {
@@ -359,12 +396,14 @@ func (s *server) validToken(r *http.Request) bool {
 		return false
 	}
 	want := "Bearer " + s.token
-	return r.Header.Get("Authorization") == want
+	got := r.Header.Get("Authorization")
+	return subtle.ConstantTimeCompare([]byte(got), []byte(want)) == 1
 }
 
 func (s *server) validHeaderAuth(r *http.Request) bool {
 	if s.authProxySecret != "" {
-		if got := strings.TrimSpace(r.Header.Get("X-Envsync-Proxy-Secret")); got == "" || got != s.authProxySecret {
+		got := strings.TrimSpace(r.Header.Get("X-Envsync-Proxy-Secret"))
+		if subtle.ConstantTimeCompare([]byte(got), []byte(s.authProxySecret)) != 1 || got == "" {
 			return false
 		}
 	}

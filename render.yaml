@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: envsync-cloud
+    runtime: go
+    plan: starter
+    buildCommand: go build -o bin/envsync-cloud ./cmd/envsync-cloud
+    startCommand: ./bin/envsync-cloud
+    healthCheckPath: /healthz
+    envVars:
+      - key: ENVSYNC_CLOUD_PAT_PEPPER
+        sync: false
+      - key: ENVSYNC_CLOUD_RATE_LIMIT_RPM
+        value: "240"
+      - key: ENVSYNC_CLOUD_RATE_LIMIT_BURST
+        value: "40"
+      - key: ENVSYNC_CLOUD_MAX_BODY_BYTES
+        value: "1048576"
+      - key: ENVSYNC_CLOUD_JWT_ISSUER
+        sync: false
+      - key: ENVSYNC_CLOUD_JWT_AUDIENCE
+        sync: false
+      - key: ENVSYNC_CLOUD_DEV_TOKEN
+        sync: false
+      - key: ENVSYNC_CLOUD_DATABASE_URL
+        fromDatabase:
+          name: envsync-postgres
+          property: connectionString
+
+databases:
+  - name: envsync-postgres
+    plan: basic-1gb

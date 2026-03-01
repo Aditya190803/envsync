@@ -1,0 +1,52 @@
+name: Cloud Postgres Integration
+
+on:
+  pull_request:
+    paths:
+      - "cmd/envsync-cloud/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/cloud-postgres-integration.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cmd/envsync-cloud/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/cloud-postgres-integration.yml"
+  workflow_dispatch:
+
+jobs:
+  postgres-integration:
+    name: Postgres integration test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: envsync
+          POSTGRES_USER: envsync
+          POSTGRES_PASSWORD: envsync
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U envsync -d envsync"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run env-gated cloud integration test
+        env:
+          ENVSYNC_CLOUD_DATABASE_URL: postgresql://envsync:envsync@localhost:5432/envsync?sslmode=disable
+          ENVSYNC_CLOUD_PAT_PEPPER: ci-test-pepper
+        run: go test ./cmd/envsync-cloud -run TestPostgresPATTeamStoreAuthorization -count=1
