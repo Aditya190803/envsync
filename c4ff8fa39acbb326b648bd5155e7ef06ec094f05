@@ -1,0 +1,161 @@
+internal/envsync/crypto.go
+  4859138a91327bac 1-99
+internal/envsync/app.go
+  77924d2f6a4acfe3 34-36,50,131-133,140-142,156
+  4c98eb2d7a9b3dd0 384,451
+  1802c6bddb7136ee 39-41,44,145-147,150
+  4859138a91327bac 100,271-273,299-300,310,319,321,323,347-348,385-417,421-422,442,481-482,492,501,503,505,530-555,557-559,563-564,587-588,611-625,627-642,647,666-676,678,683,691-696,720,727-728,760-765,806-807,828,852-862,865,872,911-917,948,950,952,954,1003-1004,1078-1079,1157-1158,1194,1199,1235-1236,1240-1241,1245,1249,1252-1254,1256-1258,1261,1265-1268,1270-1271,1274-1277,1279-1280,1282-1284,1287-1289,1291,1293-1296,1298-1303,1307-1313,1315-1320,1323,1328,1330-1343,1346-1347,1349,1377-1378,1387-1389,1436-1437,1439,1441,1443,1445-1458,1461-1462,1466-1485,1487,1491-1492,1496,1500,1504-1505,1507,1511-1514,1516-1527,1531-1536,1538,1541
+  da717983b98ede67 51-55,135,157-161,164-167,186-234,1009,1012-1013
+internal/envsync/app_test.go
+  4859138a91327bac 76,88,183,249,340,351,388,439,457,524,630,688
+  da717983b98ede67 14,769-942
+internal/envsync/keychain.go
+  77924d2f6a4acfe3 22-31,75-139
+  4859138a91327bac 1-21,32-74,140-160
+internal/envsync/audit.go
+  4859138a91327bac 1-6,8-44,46-51,99
+  da717983b98ede67 7,45,52-98
+cmd/envsync/main.go
+  da717983b98ede67 5,14-19,23-55,61-69,71-72,104-106,139-141,194-196,221,226-227,235,260,272,302,306,315,326,334,343,348-349,357,362-363,371-373,388-389,393-398,400-401,403-407,411-412,420
+  77924d2f6a4acfe3 20-22,78-101
+  4859138a91327bac 10-11,56-58,73-77,102-103,107-119,121-138,142-154,156-189,191-193,197-220,222-225,228-234,236-259,261-271,273-301,303-305,307-314,316-323,325,327,329-332,335-342,344-347,350-356,358-361,364-370,374-377,379-384,386-387,390-391,408,415-416,418,421-422
+internal/envsync/wordlist.go
+  4859138a91327bac 1-2052
+internal/envsync/colors.go
+  4859138a91327bac 1-74
+internal/envsync/remote.go
+  da717983b98ede67 16,79-80,96-110,113-114,219-236
+  1802c6bddb7136ee 9-10,133-134,137,140-142,145-149,152-153,155-156,184,186-188,192,194,199-200,202-203,237-302
+  77924d2f6a4acfe3 21-24,26-27,32-35,37-38,42-56,118-132,135,139,150-151,154,164-178,180,185,191
+  4859138a91327bac 1-8,11-15,17-20,25,28-31,36,39-41,57-78,81-95,111-112,115-117,136,138,143-144,157-163,179,181-183,189-190,193,195-198,201,204-218,303
+go.mod
+  4859138a91327bac 7,10,15-16,21
+internal/envsync/state.go
+  4859138a91327bac 1-135
+internal/envsync/rbac.go
+  4859138a91327bac 1-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "c4ff8fa39acbb326b648bd5155e7ef06ec094f05",
+  "prompts": {
+    "1802c6bddb7136ee": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9854-61cc-77b1-b728-58bf0433a523",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 136,
+      "total_deletions": 52,
+      "accepted_lines": 106,
+      "overriden_lines": 0
+    },
+    "3577ac9ab7211d51": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9851-bf2a-7281-8218-b7787d7e2d06",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 77,
+      "total_deletions": 0,
+      "accepted_lines": 76,
+      "overriden_lines": 0
+    },
+    "3c9785867fb50423": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c984d-5d63-74c2-b3a4-e646bb1b83d6",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 48,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "4859138a91327bac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c983a-a029-72f0-ab81-f734afeeeb04",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 3650,
+      "total_deletions": 1060,
+      "accepted_lines": 3394,
+      "overriden_lines": 3
+    },
+    "4c98eb2d7a9b3dd0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c983a-8269-7443-b52c-15493314d773",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 34,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "588a63fedadee5d1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c983e-d6b4-73e3-abad-1db0839ff175",
+        "model": "unknown"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 48,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "77924d2f6a4acfe3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c986a-fc44-7b41-af7a-838aec77959f",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 183,
+      "total_deletions": 31,
+      "accepted_lines": 183,
+      "overriden_lines": 0
+    },
+    "ad36998378953088": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c983e-965f-7f11-ac0a-fddf9c870729",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "da717983b98ede67": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c9843-d791-7162-b14e-85e160009dce",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Aditya Mer <aditya.mer@somaiya.edu>",
+      "messages": [],
+      "total_additions": 791,
+      "total_deletions": 469,
+      "accepted_lines": 467,
+      "overriden_lines": 0
+    }
+  }
+}
