@@ -79,13 +79,13 @@ export function Hero() {
             </div>
           </div>
         </div>
-        <div className="mx-auto mt-12 w-full max-w-[1000px]">
+        <div className="mx-auto mt-12 w-full max-w-[640px]">
           <div className="relative overflow-hidden rounded-2xl border border-white/14 bg-[#0b1017] shadow-[0_28px_75px_rgba(0,0,0,0.55)]">
             <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[var(--fc-accent)]/10" />
-            <div className="flex items-center justify-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-3 text-center">
+            <div className="flex items-center justify-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-2.5 text-center">
               <span className="ml-2 text-sm font-medium text-[var(--fc-muted)]">Install Script</span>
             </div>
-            <div className="flex items-center gap-3 px-4 py-4 sm:px-5 sm:py-5">
+            <div className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-4">
               <code className="min-w-0 flex-1 overflow-x-auto text-left font-mono text-[0.9rem] leading-relaxed text-[var(--fc-text)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <span className="prompt">$</span> {installCmd}
               </code>
