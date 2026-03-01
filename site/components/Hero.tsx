@@ -7,6 +7,7 @@ export function Hero() {
   const installCmd = "curl -fsSL https://envsync.adityamer.live/install | bash";
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copied = toastMessage === "Copied install command";
 
   function showToast(message: string) {
     if (dismissTimerRef.current) {
@@ -39,15 +40,6 @@ export function Hero() {
 
   return (
     <section className="relative isolate overflow-hidden px-6 pb-20 pt-16 sm:pt-24" id="home">
-      {toastMessage ? (
-        <div
-          className="pointer-events-none fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-lg border border-[var(--fc-accent)]/45 bg-black/80 px-4 py-2 text-sm font-medium text-[var(--fc-text)] shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm"
-          role="status"
-          aria-live="polite"
-        >
-          {toastMessage}
-        </div>
-      ) : null}
       <div className="pointer-events-none absolute left-1/2 top-[-9rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,122,26,0.2)_0%,rgba(255,122,26,0)_68%)] blur-3xl" />
       <div className="pointer-events-none absolute inset-y-0 left-[-7%] w-1/2 bg-[radial-gradient(circle_at_30%_35%,rgba(255,122,26,0.08),transparent_58%)]" />
       <div className="mx-auto w-full max-w-[1460px]">
@@ -112,6 +104,52 @@ export function Hero() {
                 </svg>
               </button>
             </div>
+          </div>
+          <div className="mt-3 flex h-7 items-center justify-center" role="status" aria-live="polite">
+            {toastMessage ? (
+              <div
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition ${
+                  copied
+                    ? "border-[var(--fc-accent)]/45 bg-[var(--fc-accent)]/12 text-[var(--fc-text)]"
+                    : "border-white/18 bg-white/[0.06] text-[var(--fc-muted)]"
+                }`}
+              >
+                {copied ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" x2="12" y1="8" y2="12" />
+                    <line x1="12" x2="12.01" y1="16" y2="16" />
+                  </svg>
+                )}
+                {toastMessage}
+              </div>
+            ) : null}
           </div>
           <p className="mt-4 text-center text-sm text-[var(--fc-muted)] lg:text-left">Supports macOS, Linux, and Windows (WSL)</p>
         </div>
