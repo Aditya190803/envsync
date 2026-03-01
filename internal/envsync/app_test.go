@@ -101,6 +101,67 @@ func TestInitSetGetRollback(t *testing.T) {
 	}
 }
 
+func TestInitReRunUpgradesLegacyStateSchema(t *testing.T) {
+	tmp := t.TempDir()
+	cwd := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout := &bytes.Buffer{}
+	app := &App{
+		ConfigDir:  filepath.Join(tmp, "cfg"),
+		StatePath:  filepath.Join(tmp, "cfg", "state.json"),
+		RemotePath: filepath.Join(tmp, "cfg", "remote.json"),
+		CWD:        cwd,
+		Stdin:      strings.NewReader(""),
+		Stdout:     stdout,
+		Stderr:     &bytes.Buffer{},
+		Now:        func() time.Time { return time.Unix(0, 0).UTC() },
+	}
+
+	if err := app.Init(); err != nil {
+		t.Fatalf("initial init: %v", err)
+	}
+
+	b, err := os.ReadFile(app.StatePath)
+	if err != nil {
+		t.Fatalf("read state: %v", err)
+	}
+	var disk map[string]any
+	if err := json.Unmarshal(b, &disk); err != nil {
+		t.Fatalf("decode state: %v", err)
+	}
+	disk["version"] = float64(1)
+	disk["current_env"] = ""
+	legacy, err := json.MarshalIndent(disk, "", "  ")
+	if err != nil {
+		t.Fatalf("encode legacy state: %v", err)
+	}
+	if err := os.WriteFile(app.StatePath, legacy, 0o600); err != nil {
+		t.Fatalf("write legacy state: %v", err)
+	}
+
+	stdout.Reset()
+	if err := app.Init(); err != nil {
+		t.Fatalf("re-run init: %v", err)
+	}
+	if out := stdout.String(); !strings.Contains(out, "v1 -> v2") {
+		t.Fatalf("expected upgrade message, got %q", out)
+	}
+
+	state, err := app.loadState()
+	if err != nil {
+		t.Fatalf("load upgraded state: %v", err)
+	}
+	if state.Version != currentStateSchemaVersion {
+		t.Fatalf("expected state version %d, got %d", currentStateSchemaVersion, state.Version)
+	}
+	if state.CurrentEnv != defaultEnv {
+		t.Fatalf("expected current env %q, got %q", defaultEnv, state.CurrentEnv)
+	}
+}
+
 func TestPushPullHTTPRemote(t *testing.T) {
 	tmp := t.TempDir()
 	cwd := filepath.Join(tmp, "repo")

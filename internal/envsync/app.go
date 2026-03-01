@@ -236,7 +236,24 @@ func getenvDuration(name string, fallback time.Duration) time.Duration {
 
 func (a *App) Init() error {
 	if _, err := os.Stat(a.StatePath); err == nil {
-		return errors.New("already initialized")
+		diskVersion, err := a.stateVersionOnDisk()
+		if err != nil {
+			return err
+		}
+		state, err := a.loadState()
+		if err != nil {
+			return err
+		}
+		if diskVersion < state.Version {
+			if err := a.saveState(state); err != nil {
+				return err
+			}
+			fmt.Fprintf(a.Stdout, "%s local state schema v%d -> v%d\n", cSuccess("upgraded"), diskVersion, state.Version)
+			a.logAudit("init_upgrade", state, map[string]any{"from_version": diskVersion, "to_version": state.Version})
+			return nil
+		}
+		fmt.Fprintf(a.Stdout, "%s (state schema v%d)\n", cSuccess("already initialized"), state.Version)
+		return nil
 	}
 	if err := os.MkdirAll(a.ConfigDir, 0o700); err != nil {
 		return err
@@ -256,7 +273,7 @@ func (a *App) Init() error {
 		return err
 	}
 	state := &State{
-		Version:         1,
+		Version:         currentStateSchemaVersion,
 		DeviceID:        deviceID,
 		SaltB64:         base64.StdEncoding.EncodeToString(salt),
 		KeyCheckB64:     base64.StdEncoding.EncodeToString(check),
@@ -1053,7 +1070,7 @@ func (a *App) Restore() error {
 		teams = map[string]*Team{}
 	}
 	state := &State{
-		Version:         1,
+		Version:         currentStateSchemaVersion,
 		DeviceID:        deviceID,
 		SaltB64:         remote.SaltB64,
 		KeyCheckB64:     remote.KeyCheckB64,

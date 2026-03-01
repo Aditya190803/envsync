@@ -74,7 +74,7 @@ go build -o envsync-server ./cmd/envsync-server
 ## Quickstart
 
 ```bash
-# initialize vault (prints recovery phrase once)
+# initialize vault (prints recovery phrase once; safe to re-run after upgrades)
 envsync init
 
 # sign in for cloud sync

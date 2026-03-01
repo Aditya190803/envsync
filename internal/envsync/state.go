@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 )
 
+const currentStateSchemaVersion = 2
+
 func (a *App) loadState() (*State, error) {
 	b, err := os.ReadFile(a.StatePath)
 	if err != nil {
@@ -20,16 +22,25 @@ func (a *App) loadState() (*State, error) {
 	if err := json.Unmarshal(b, &state); err != nil {
 		return nil, err
 	}
-	if state.ProjectBindings == nil {
-		state.ProjectBindings = map[string]string{}
-	}
-	if state.Teams == nil {
-		state.Teams = map[string]*Team{}
-	}
-	if state.Projects == nil {
-		state.Projects = map[string]*Project{}
-	}
+	_, _, _ = migrateStateSchema(&state)
 	return &state, nil
+}
+
+func (a *App) stateVersionOnDisk() (int, error) {
+	b, err := os.ReadFile(a.StatePath)
+	if err != nil {
+		return 0, err
+	}
+	var raw struct {
+		Version int `json:"version"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return 0, err
+	}
+	if raw.Version <= 0 {
+		return 1, nil
+	}
+	return raw.Version, nil
 }
 
 func (a *App) saveState(state *State) error {
@@ -132,4 +143,82 @@ func markSyncedVersions(projects map[string]*Project) {
 			}
 		}
 	}
+}
+
+func migrateStateSchema(state *State) (changed bool, fromVersion int, toVersion int) {
+	if state == nil {
+		return false, 0, 0
+	}
+
+	fromVersion = state.Version
+	if state.Version <= 0 {
+		state.Version = 1
+		changed = true
+	}
+
+	if state.Version < 2 {
+		if state.CurrentEnv == "" {
+			state.CurrentEnv = defaultEnv
+		}
+		state.Version = 2
+		changed = true
+	}
+
+	if state.ProjectBindings == nil {
+		state.ProjectBindings = map[string]string{}
+		changed = true
+	}
+	if state.Teams == nil {
+		state.Teams = map[string]*Team{}
+		changed = true
+	}
+	if state.Projects == nil {
+		state.Projects = map[string]*Project{}
+		changed = true
+	}
+	if state.CurrentEnv == "" {
+		state.CurrentEnv = defaultEnv
+		changed = true
+	}
+
+	for _, team := range state.Teams {
+		if team == nil {
+			continue
+		}
+		if team.Members == nil {
+			team.Members = map[string]string{}
+			changed = true
+		}
+	}
+
+	for _, project := range state.Projects {
+		if project == nil {
+			continue
+		}
+		if project.Envs == nil {
+			project.Envs = map[string]*Env{}
+			changed = true
+		}
+		for _, env := range project.Envs {
+			if env == nil {
+				continue
+			}
+			if env.Vars == nil {
+				env.Vars = map[string]*SecretRecord{}
+				changed = true
+			}
+		}
+	}
+
+	if state.Version > currentStateSchemaVersion {
+		toVersion = state.Version
+		return changed, fromVersion, toVersion
+	}
+	if state.Version < currentStateSchemaVersion {
+		state.Version = currentStateSchemaVersion
+		changed = true
+	}
+
+	toVersion = state.Version
+	return changed, fromVersion, toVersion
 }
