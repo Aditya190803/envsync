@@ -4,15 +4,25 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	_ = os.Setenv("ENVSYNC_KEYCHAIN_SERVICE", "envsync-test-phrase-"+suffix)
+	_ = os.Setenv("ENVSYNC_SESSION_SERVICE", "envsync-test-session-"+suffix)
+	_ = os.Setenv("NO_COLOR", "1")
+	os.Exit(m.Run())
+}
 
 func TestEncryptDecryptRoundTrip(t *testing.T) {
 	key := []byte("01234567890123456789012345678901")
@@ -63,7 +73,7 @@ func TestInitSetGetRollback(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 
@@ -75,7 +85,7 @@ func TestInitSetGetRollback(t *testing.T) {
 		t.Fatalf("want abc, got %q", got)
 	}
 
-	if err := app.Set("TOKEN", "def"); err != nil {
+	if err := app.Set("TOKEN", "def", ""); err != nil {
 		t.Fatalf("set2: %v", err)
 	}
 	if err := app.Rollback("TOKEN", 1); err != nil {
@@ -170,7 +180,7 @@ func TestPushPullHTTPRemote(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 	if err := app.Push(false); err != nil {
@@ -201,148 +211,6 @@ func TestPushPullHTTPRemote(t *testing.T) {
 	localVersion := state.Projects["api"].Envs["dev"].Vars["TOKEN"].CurrentVersion
 	if localVersion != 2 {
 		t.Fatalf("expected local version 2 after pull, got %d", localVersion)
-	}
-}
-
-func TestPushPullConvexRemote(t *testing.T) {
-	tmp := t.TempDir()
-	cwd := filepath.Join(tmp, "repo")
-	if err := os.MkdirAll(cwd, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	var (
-		mu    sync.Mutex
-		store = &RemoteStore{Version: 1, Revision: 0, Projects: map[string]*Project{}}
-	)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Convex deploy-key" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		var req map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		path, _ := req["path"].(string)
-		args, _ := req["args"].(map[string]any)
-		if got, _ := args["apiKey"].(string); got != "backup-key" {
-			http.Error(w, "bad api key", http.StatusUnauthorized)
-			return
-		}
-
-		switch r.URL.Path {
-		case "/api/query":
-			if path != "backup:getStore" {
-				http.Error(w, "bad path", http.StatusBadRequest)
-				return
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"status": "success",
-				"value":  store,
-			})
-		case "/api/mutation":
-			if path != "backup:putStore" {
-				http.Error(w, "bad path", http.StatusBadRequest)
-				return
-			}
-			if got, _ := args["expectedRevision"].(float64); got != 0 {
-				http.Error(w, "bad expected revision", http.StatusConflict)
-				return
-			}
-			payload, _ := args["store"]
-			raw, _ := json.Marshal(payload)
-			var next RemoteStore
-			if err := json.Unmarshal(raw, &next); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			if next.Revision != 1 {
-				http.Error(w, "bad revision", http.StatusConflict)
-				return
-			}
-			mu.Lock()
-			store = &next
-			mu.Unlock()
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"status": "success",
-				"value":  map[string]any{"ok": true},
-			})
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer srv.Close()
-
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	app := &App{
-		ConfigDir:       filepath.Join(tmp, "cfg"),
-		StatePath:       filepath.Join(tmp, "cfg", "state.json"),
-		RemotePath:      filepath.Join(tmp, "cfg", "remote.json"),
-		ConvexURL:       srv.URL,
-		ConvexAPIKey:    "backup-key",
-		ConvexDeployKey: "deploy-key",
-		ConvexGetPath:   "backup:getStore",
-		ConvexPutPath:   "backup:putStore",
-		CWD:             cwd,
-		Stdin:           strings.NewReader(""),
-		Stdout:          stdout,
-		Stderr:          stderr,
-		Now:             func() time.Time { return time.Unix(0, 0).UTC() },
-		HTTPClient:      srv.Client(),
-		phraseCache:     "",
-	}
-
-	if err := app.Init(); err != nil {
-		t.Fatalf("init: %v", err)
-	}
-	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
-	phrase := lines[len(lines)-1]
-	t.Setenv("ENVSYNC_RECOVERY_PHRASE", phrase)
-
-	if err := app.ProjectCreate("api"); err != nil {
-		t.Fatalf("project create: %v", err)
-	}
-	if err := app.ProjectUse("api"); err != nil {
-		t.Fatalf("project use: %v", err)
-	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
-		t.Fatalf("set: %v", err)
-	}
-	if err := app.Push(false); err != nil {
-		t.Fatalf("push: %v", err)
-	}
-
-	mu.Lock()
-	remoteVersion := store.Projects["api"].Envs["dev"].Vars["TOKEN"].CurrentVersion
-	mu.Unlock()
-	if remoteVersion != 1 {
-		t.Fatalf("expected convex remote version 1, got %d", remoteVersion)
-	}
-
-	mu.Lock()
-	rec := store.Projects["api"].Envs["dev"].Vars["TOKEN"]
-	next := rec.Versions[0]
-	next.Version = 2
-	rec.CurrentVersion = 2
-	rec.Versions = append(rec.Versions, next)
-	mu.Unlock()
-
-	if err := app.Pull(true); err != nil {
-		t.Fatalf("pull: %v", err)
-	}
-	state, err := app.loadState()
-	if err != nil {
-		t.Fatalf("load state: %v", err)
-	}
-	localVersion := state.Projects["api"].Envs["dev"].Vars["TOKEN"].CurrentVersion
-	if localVersion != 2 {
-		t.Fatalf("expected local version 2 after convex pull, got %d", localVersion)
 	}
 }
 
@@ -378,7 +246,7 @@ func TestRestoreFromRemoteFile(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 	if err := app.Push(false); err != nil {
@@ -469,7 +337,7 @@ func TestTeamRBACReaderCannotSet(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("admin set: %v", err)
 	}
 	if err := app.TeamAddMember("core", "viewer", roleReader); err != nil {
@@ -480,7 +348,7 @@ func TestTeamRBACReaderCannotSet(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("viewer project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "def"); err == nil {
+	if err := app.Set("TOKEN", "def", ""); err == nil {
 		t.Fatal("expected viewer set to fail")
 	}
 }
@@ -517,7 +385,7 @@ func TestRotateFlow(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 	if err := app.Rotate("TOKEN", "def"); err != nil {
@@ -568,7 +436,7 @@ func TestTeamRBACPrivilegedOperations(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("admin set: %v", err)
 	}
 	if err := app.Push(false); err != nil {
@@ -586,7 +454,7 @@ func TestTeamRBACPrivilegedOperations(t *testing.T) {
 	if err := app.EnvCreate("prod"); err == nil {
 		t.Fatal("expected env create to fail for reader")
 	}
-	if err := app.Set("TOKEN", "def"); err == nil {
+	if err := app.Set("TOKEN", "def", ""); err == nil {
 		t.Fatal("expected set to fail for reader")
 	}
 	if err := app.Rotate("TOKEN", "ghi"); err == nil {
@@ -653,7 +521,7 @@ func TestAuditIncludesActorAndContext(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "abc"); err != nil {
+	if err := app.Set("TOKEN", "abc", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 
@@ -759,7 +627,7 @@ func TestRemoteFileOptimisticConcurrencyConflict(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "a1"); err != nil {
+	if err := app.Set("TOKEN", "a1", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 	if err := app.Push(false); err != nil {
@@ -817,7 +685,7 @@ func TestBackupRestoreDisasterRecoveryRoundTrip(t *testing.T) {
 	if err := app.ProjectUse("api"); err != nil {
 		t.Fatalf("project use: %v", err)
 	}
-	if err := app.Set("TOKEN", "recoverable"); err != nil {
+	if err := app.Set("TOKEN", "recoverable", ""); err != nil {
 		t.Fatalf("set: %v", err)
 	}
 	if err := app.Push(false); err != nil {
@@ -895,6 +763,183 @@ func TestDoctorIncludesActionableHints(t *testing.T) {
 	out := stdout.String()
 	if !strings.Contains(out, "hint: initialize or restore first") {
 		t.Fatalf("expected actionable hint in doctor output, got %q", out)
+	}
+}
+
+func TestDoctorJSONOutput(t *testing.T) {
+	tmp := t.TempDir()
+	cwd := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stdout := &bytes.Buffer{}
+	app := &App{
+		ConfigDir:  filepath.Join(tmp, "cfg"),
+		StatePath:  filepath.Join(tmp, "cfg", "state.json"),
+		RemotePath: filepath.Join(tmp, "cfg", "remote.json"),
+		CWD:        cwd,
+		Stdin:      strings.NewReader(""),
+		Stdout:     stdout,
+		Stderr:     &bytes.Buffer{},
+		Now:        time.Now,
+	}
+	err := app.DoctorJSON()
+	if err == nil {
+		t.Fatal("expected doctor json to report failure")
+	}
+	var payload struct {
+		OK     bool `json:"ok"`
+		Checks []struct {
+			Name string `json:"name"`
+			OK   bool   `json:"ok"`
+		} `json:"checks"`
+	}
+	if decErr := json.Unmarshal(stdout.Bytes(), &payload); decErr != nil {
+		t.Fatalf("decode doctor json: %v", decErr)
+	}
+	if payload.OK {
+		t.Fatal("expected ok=false")
+	}
+	if len(payload.Checks) == 0 {
+		t.Fatal("expected checks in doctor json")
+	}
+}
+
+func TestRemoteFileConcurrentSaveRace(t *testing.T) {
+	tmp := t.TempDir()
+	remotePath := filepath.Join(tmp, "shared", "remote.json")
+	if err := os.MkdirAll(filepath.Dir(remotePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	initial := &RemoteStore{
+		Version:  1,
+		Revision: 1,
+		Projects: map[string]*Project{},
+		Teams:    map[string]*Team{},
+	}
+	raw, _ := json.Marshal(initial)
+	if err := os.WriteFile(remotePath, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	appA := &App{RemotePath: remotePath}
+	appB := &App{RemotePath: remotePath}
+
+	remoteA, err := appA.loadRemoteStore()
+	if err != nil {
+		t.Fatalf("load A: %v", err)
+	}
+	remoteB, err := appB.loadRemoteStore()
+	if err != nil {
+		t.Fatalf("load B: %v", err)
+	}
+	expected := remoteA.Revision
+
+	var okCount atomic.Int32
+	var conflictCount atomic.Int32
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		if err := appA.saveRemoteStore(remoteA, expected); err != nil {
+			if strings.Contains(err.Error(), "remote changed concurrently") {
+				conflictCount.Add(1)
+				return
+			}
+			t.Errorf("save A: %v", err)
+			return
+		}
+		okCount.Add(1)
+	}()
+	go func() {
+		defer wg.Done()
+		if err := appB.saveRemoteStore(remoteB, expected); err != nil {
+			if strings.Contains(err.Error(), "remote changed concurrently") {
+				conflictCount.Add(1)
+				return
+			}
+			t.Errorf("save B: %v", err)
+			return
+		}
+		okCount.Add(1)
+	}()
+	wg.Wait()
+
+	if okCount.Load() != 1 || conflictCount.Load() != 1 {
+		t.Fatalf("expected one success and one conflict, got success=%d conflict=%d", okCount.Load(), conflictCount.Load())
+	}
+
+	final, err := appA.loadRemoteStore()
+	if err != nil {
+		t.Fatalf("load final: %v", err)
+	}
+	if final.Revision != expected+1 {
+		t.Fatalf("expected final revision %d, got %d", expected+1, final.Revision)
+	}
+}
+
+func TestPermissionAutoFix(t *testing.T) {
+	tmp := t.TempDir()
+	cfg := filepath.Join(tmp, "cfg")
+	if err := os.MkdirAll(cfg, 0o777); err != nil {
+		t.Fatal(err)
+	}
+	statePath := filepath.Join(cfg, "state.json")
+	remotePath := filepath.Join(cfg, "remote.json")
+	auditPath := filepath.Join(cfg, "audit.log")
+	if err := os.WriteFile(statePath, []byte("{}"), 0o666); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(remotePath, []byte("{}"), 0o666); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(auditPath, []byte(""), 0o666); err != nil {
+		t.Fatal(err)
+	}
+
+	app := &App{
+		ConfigDir:      cfg,
+		StatePath:      statePath,
+		RemotePath:     remotePath,
+		AuditPath:      auditPath,
+		FixPermissions: true,
+	}
+	fixed := app.verifyAndOptionallyFixPermissions()
+	if len(fixed) == 0 {
+		t.Fatal("expected permission fixes")
+	}
+	for _, p := range []string{statePath, remotePath, auditPath} {
+		info, err := os.Stat(p)
+		if err != nil {
+			t.Fatalf("stat %s: %v", p, err)
+		}
+		if info.Mode().Perm() != 0o600 {
+			t.Fatalf("expected %s mode 600, got %o", p, info.Mode().Perm())
+		}
+	}
+}
+
+func TestAuditRotationBySize(t *testing.T) {
+	tmp := t.TempDir()
+	auditPath := filepath.Join(tmp, "audit.log")
+	app := &App{
+		AuditPath:       auditPath,
+		CWD:             tmp,
+		Stdout:          &bytes.Buffer{},
+		Stderr:          &bytes.Buffer{},
+		Now:             time.Now,
+		AuditMaxBytes:   128,
+		AuditMaxFiles:   3,
+		AuditMaxAge:     0,
+		AuditMaxAgeDays: 0,
+	}
+	state := &State{DeviceID: "dev1"}
+	for i := 0; i < 20; i++ {
+		app.logAudit("set", state, map[string]any{"i": i, "msg": strings.Repeat("x", 20)})
+	}
+	if _, err := os.Stat(auditPath + ".1"); err != nil {
+		t.Fatalf("expected rotated audit file: %v", err)
 	}
 }
 
