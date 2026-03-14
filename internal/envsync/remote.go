@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -218,23 +217,6 @@ func validateRemoteCrypto(state *State, remote *RemoteStore) error {
 	return nil
 }
 
-func withExclusiveFileLock(lockPath string, fn func() error) error {
-	if err := os.MkdirAll(filepath.Dir(lockPath), 0o700); err != nil {
-		return err
-	}
-	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
-	if err != nil {
-		return err
-	}
-	defer lockFile.Close()
-
-	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
-		return err
-	}
-	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
-
-	return fn()
-}
 
 func (a *App) httpClient() *http.Client {
 	if a.HTTPClient != nil {
