@@ -65,6 +65,49 @@ func TestCloudBaseURLDefaultsWhenUnset(t *testing.T) {
 	}
 }
 
+func TestCloudSiteURLForAPI(t *testing.T) {
+	t.Run("defaults when base URL is invalid", func(t *testing.T) {
+		if got := cloudSiteURLForAPI("://bad"); got != defaultCloudSiteURL {
+			t.Fatalf("expected default site URL %q, got %q", defaultCloudSiteURL, got)
+		}
+	})
+
+	t.Run("strips api subdomain", func(t *testing.T) {
+		got := cloudSiteURLForAPI("https://api.envsync.adityamer.dev")
+		if got != "https://envsync.adityamer.dev" {
+			t.Fatalf("expected canonical site URL, got %q", got)
+		}
+	})
+
+	t.Run("keeps localhost port", func(t *testing.T) {
+		got := cloudSiteURLForAPI("http://localhost:3000")
+		if got != "http://localhost:3000" {
+			t.Fatalf("expected localhost URL with port, got %q", got)
+		}
+	})
+
+	t.Run("site URL env override wins", func(t *testing.T) {
+		t.Setenv("ENVSYNC_SITE_URL", "https://envsync.adityamer.dev")
+		got := cloudSiteURLForAPI("https://api.envsync.adityamer.dev")
+		if got != "https://envsync.adityamer.dev" {
+			t.Fatalf("expected env override URL, got %q", got)
+		}
+	})
+}
+
+func TestCloudBrowserLoginURL(t *testing.T) {
+	got := cloudBrowserLoginURL("https://envsync.adityamer.dev")
+	if !strings.HasPrefix(got, "https://envsync.adityamer.dev/dashboard/devices?") {
+		t.Fatalf("expected dashboard devices URL, got %q", got)
+	}
+	if !strings.Contains(got, "source=envsync-cli") {
+		t.Fatalf("expected source query parameter, got %q", got)
+	}
+	if !strings.Contains(got, "cloud=https%3A%2F%2Fenvsync.adityamer.dev") {
+		t.Fatalf("expected cloud query parameter, got %q", got)
+	}
+}
+
 func TestLoginOpensBrowserAndSavesSession(t *testing.T) {
 	tmp := t.TempDir()
 	var seenAuth string

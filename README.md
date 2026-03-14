@@ -4,6 +4,26 @@ ENV Sync is a CLI for syncing environment variables across devices and teams on 
 
 This repository includes a working Go MVP with encrypted secrets, project-based sync, team collaboration, and restore support.
 
+## Hosted domain
+
+Canonical hosted domain (single source of truth):
+
+- `https://envsync.adityamer.dev`
+
+Use this same domain for:
+
+- Website pages
+- Installer endpoint (`/install`)
+- Cloud API (`/v1/*`)
+
+No alternate hosted domain or `api.` subdomain is used.
+
+One-domain deployment requirement:
+
+- Route `/v1/*` and `/healthz` to `envsync-cloud`.
+- Route the remaining paths to the Next.js site app.
+- If `/v1/*` is not routed to `envsync-cloud`, dashboard token minting (`/api/cli-token`) will fail with 404 HTML upstream errors.
+
 ## Features
 
 - Local encryption using `AES-256-GCM`

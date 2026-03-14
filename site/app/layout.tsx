@@ -15,14 +15,14 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://envsync.dev"),
+  metadataBase: new URL("https://envsync.adityamer.dev"),
   title: "ENV Sync | Sync env across devices & teams",
   description:
     "ENV Sync is a CLI for syncing environment variables across devices and teams on a project basis.",
   openGraph: {
     title: "ENV Sync",
     description: "Sync env across devices & teams.",
-    url: "https://envsync.dev",
+    url: "https://envsync.adityamer.dev",
     siteName: "ENV Sync",
     type: "website",
   },

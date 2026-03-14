@@ -52,6 +52,16 @@ type teamMembership struct {
 	Role   string `json:"role"`
 }
 
+type inMemoryTokenRecord struct {
+	TokenID   string
+	RawToken  string
+	UserID    string
+	Email     string
+	Scopes    []string
+	ExpiresAt *time.Time
+	RevokedAt *time.Time
+}
+
 type authVerifier struct {
 	db            *sql.DB
 	patPepper     string
@@ -62,6 +72,8 @@ type authVerifier struct {
 	oidcVerifier  *oidc.IDTokenVerifier
 	oidcAvailable bool
 	now           func() time.Time
+	memoryMu      sync.Mutex
+	memoryTokens  map[string]*inMemoryTokenRecord
 }
 
 type storeRepo interface {
@@ -340,10 +352,6 @@ func (s *cloudServer) handleTokens(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusForbidden, "forbidden", "token missing scope tokens:write")
 		return
 	}
-	if s.verifier.db == nil {
-		writeError(w, r, http.StatusServiceUnavailable, "unavailable", "token management requires postgres mode")
-		return
-	}
 
 	if r.URL.Path == "/v1/tokens" {
 		if r.Method != http.MethodPost {
@@ -472,6 +480,7 @@ func newAuthVerifier(db *sql.DB) (*authVerifier, error) {
 		audience:     strings.TrimSpace(os.Getenv("ENVSYNC_CLOUD_JWT_AUDIENCE")),
 		skipAudCheck: envBool("ENVSYNC_CLOUD_JWT_SKIP_AUD_CHECK", false),
 		now:          time.Now,
+		memoryTokens: map[string]*inMemoryTokenRecord{},
 	}
 	if v.db != nil && v.patPepper == "" {
 		log.Printf("warning: ENVSYNC_CLOUD_PAT_PEPPER is empty; PAT authentication is disabled")
@@ -549,7 +558,10 @@ func (v *authVerifier) authenticate(r *http.Request) (*principal, error) {
 }
 
 func (v *authVerifier) authenticatePAT(ctx context.Context, rawToken string) (*principal, error) {
-	if v.db == nil || strings.TrimSpace(v.patPepper) == "" {
+	if v.db == nil {
+		return v.authenticateMemoryToken(rawToken)
+	}
+	if strings.TrimSpace(v.patPepper) == "" {
 		return nil, nil
 	}
 	prefix := extractTokenPrefix(rawToken)
@@ -624,6 +636,42 @@ ORDER BY pat.created_at DESC
 		return nil, fmt.Errorf("iterate tokens: %w", err)
 	}
 	return nil, nil
+}
+
+func (v *authVerifier) authenticateMemoryToken(rawToken string) (*principal, error) {
+	prefix := extractTokenPrefix(rawToken)
+	if prefix == "" {
+		return nil, nil
+	}
+
+	v.memoryMu.Lock()
+	rec := v.memoryTokens[prefix]
+	v.memoryMu.Unlock()
+	if rec == nil {
+		return nil, nil
+	}
+	if subtle.ConstantTimeCompare([]byte(rec.RawToken), []byte(rawToken)) != 1 {
+		return nil, nil
+	}
+	if rec.RevokedAt != nil {
+		return nil, errors.New("token is revoked")
+	}
+	nowFn := v.now
+	if nowFn == nil {
+		nowFn = time.Now
+	}
+	if rec.ExpiresAt != nil && nowFn().After(*rec.ExpiresAt) {
+		return nil, errors.New("token is expired")
+	}
+	return &principal{
+		Subject: rec.UserID,
+		UserID:  rec.UserID,
+		Email:   rec.Email,
+		Scopes:  toScopeSet(rec.Scopes),
+		Raw: map[string]any{
+			"token_id": rec.TokenID,
+		},
+	}, nil
 }
 
 func (v *authVerifier) loadMemberships(ctx context.Context, userID string) ([]organizationMembership, error) {
@@ -718,7 +766,49 @@ RETURNING id::text
 
 func (v *authVerifier) issueToken(ctx context.Context, p *principal, scopes []string, expiresAt *time.Time) (map[string]any, error) {
 	if v.db == nil {
-		return nil, errors.New("db is not configured")
+		rawToken, prefix, err := generatePAT()
+		if err != nil {
+			return nil, err
+		}
+		nowFn := v.now
+		if nowFn == nil {
+			nowFn = time.Now
+		}
+		now := nowFn().UTC()
+		tokenID := fmt.Sprintf("mem-%s", prefix)
+		userID := strings.TrimSpace(p.UserID)
+		if userID == "" {
+			userID = strings.TrimSpace(p.Subject)
+		}
+		if userID == "" {
+			userID = "dev-user"
+		}
+		rec := &inMemoryTokenRecord{
+			TokenID:  tokenID,
+			RawToken: rawToken,
+			UserID:   userID,
+			Email:    strings.TrimSpace(p.Email),
+			Scopes:   append([]string(nil), scopes...),
+		}
+		if expiresAt != nil {
+			t := expiresAt.UTC()
+			rec.ExpiresAt = &t
+		}
+		v.memoryMu.Lock()
+		v.memoryTokens[prefix] = rec
+		v.memoryMu.Unlock()
+
+		out := map[string]any{
+			"id":           tokenID,
+			"token":        rawToken,
+			"token_prefix": prefix,
+			"scopes":       scopes,
+			"issued_at":    now.Format(time.RFC3339),
+		}
+		if rec.ExpiresAt != nil {
+			out["expires_at"] = rec.ExpiresAt.Format(time.RFC3339)
+		}
+		return out, nil
 	}
 	if strings.TrimSpace(v.patPepper) == "" {
 		return nil, errors.New("ENVSYNC_CLOUD_PAT_PEPPER is required")
@@ -759,7 +849,25 @@ RETURNING id::text
 
 func (v *authVerifier) revokeToken(ctx context.Context, userID, tokenID string) error {
 	if v.db == nil {
-		return errors.New("db is not configured")
+		nowFn := v.now
+		if nowFn == nil {
+			nowFn = time.Now
+		}
+		now := nowFn().UTC()
+
+		v.memoryMu.Lock()
+		defer v.memoryMu.Unlock()
+		for _, rec := range v.memoryTokens {
+			if rec == nil || rec.TokenID != tokenID {
+				continue
+			}
+			if strings.TrimSpace(userID) != "" && rec.UserID != strings.TrimSpace(userID) {
+				continue
+			}
+			rec.RevokedAt = &now
+			return nil
+		}
+		return sql.ErrNoRows
 	}
 	res, err := v.db.ExecContext(ctx, `
 UPDATE personal_access_tokens

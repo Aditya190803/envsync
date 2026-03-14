@@ -3,7 +3,7 @@ info:
   title: EnvSync Cloud API
   version: 1.0.0
 servers:
-  - url: https://api.envsync.dev
+  - url: https://envsync.adityamer.dev
 paths:
   /healthz:
     get:

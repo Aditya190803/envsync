@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getStackServerApp } from "@/lib/auth/stack";
+import { formatUpstreamError, resolveCloudURLs } from "@/lib/server/cloudUrl";
 
 type CreateTokenResponse = {
   token?: string;
@@ -14,14 +15,6 @@ function errorMessage(err: unknown) {
     return err.message;
   }
   return "internal_error";
-}
-
-function resolveCloudURL(req: NextRequest) {
-  const configured = process.env.ENVSYNC_CLOUD_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/$/, "");
-  }
-  return req.nextUrl.origin;
 }
 
 export async function POST(req: NextRequest) {
@@ -41,27 +34,72 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "missing_access_token" }, { status: 401 });
     }
 
-    const cloudURL = resolveCloudURL(req);
-    const response = await fetch(`${cloudURL}/v1/tokens`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        scopes: ["profile:read", "store:read", "store:write"],
-      }),
-      cache: "no-store",
+    const devToken = process.env.NODE_ENV !== "production" ? process.env.ENVSYNC_CLOUD_DEV_TOKEN?.trim() : "";
+    const upstreamAccessToken = devToken || accessToken;
+
+    const cloudURLs = resolveCloudURLs({
+      configuredCloudURL: process.env.ENVSYNC_CLOUD_URL,
+      hostname: req.nextUrl.hostname,
+      origin: req.nextUrl.origin,
     });
 
-    if (!response.ok) {
-      const raw = await response.text();
-      const trimmed = raw.trim();
+    let response: Response | null = null;
+    let responseBody = "";
+    let networkError = "";
+    for (let i = 0; i < cloudURLs.length; i += 1) {
+      const cloudURL = cloudURLs[i];
+      try {
+        response = await fetch(`${cloudURL}/v1/tokens`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${upstreamAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            scopes: ["profile:read", "store:read", "store:write"],
+          }),
+          cache: "no-store",
+        });
+      } catch (err) {
+        networkError = errorMessage(err);
+        const hasFallback = i < cloudURLs.length - 1;
+        if (hasFallback) {
+          continue;
+        }
+        return NextResponse.json(
+          {
+            error: `cloud_token_issue_failed: 502 ${networkError}`,
+          },
+          { status: 502 },
+        );
+      }
+
+      if (response.ok) {
+        break;
+      }
+
+      responseBody = await response.text();
+      const hasFallback = i < cloudURLs.length - 1;
+      if (response.status === 404 && hasFallback) {
+        continue;
+      }
+
+      const upstreamError = formatUpstreamError(responseBody);
       return NextResponse.json(
         {
-          error: `cloud_token_issue_failed: ${response.status}${trimmed ? ` ${trimmed}` : ""}`,
+          error: `cloud_token_issue_failed: ${response.status}${upstreamError ? ` ${upstreamError}` : ""}`,
         },
         { status: response.status },
+      );
+    }
+
+    if (!response || !response.ok) {
+      const upstreamError = formatUpstreamError(responseBody || networkError);
+      return NextResponse.json(
+        {
+          error: `cloud_token_issue_failed: ${response?.status ?? 502}${upstreamError ? ` ${upstreamError}` : ""}`,
+        },
+        { status: response?.status ?? 502 },
       );
     }
 
