@@ -9,6 +9,8 @@ Marketing site and docs UI for ENV Sync, built with Next.js App Router + Tailwin
 - TypeScript
 - Tailwind CSS v4
 - Framer Motion
+- Stack Auth
+- Convex
 
 ## Local development
 
@@ -20,6 +22,23 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+Create a local site env file before testing auth and dashboard routes:
+
+```bash
+cp env.example .env
+```
+
+Set these env vars before testing auth and dashboard routes:
+
+```bash
+NEXT_PUBLIC_STACK_PROJECT_ID=
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=
+STACK_SECRET_SERVER_KEY=
+NEXT_PUBLIC_STACK_BASE_URL=
+
+NEXT_PUBLIC_CONVEX_URL=
+```
 
 ## Scripts
 
@@ -34,6 +53,9 @@ npm run lint   # eslint
 
 - `/` landing page
 - `/docs` product documentation page
+- `/handler/*` Stack Auth handler routes (sign in/up/callback pages)
+- `/dashboard` authenticated shell (v1 scaffold)
+- `/dashboard/devices` device approval and revocation scaffold
 
 ## Project structure
 

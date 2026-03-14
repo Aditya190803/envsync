@@ -116,6 +116,24 @@ export default function DocsPage() {
             ))}
           </div>
         </section>
+
+        <section className="mt-10 space-y-4">
+          <h2 className="text-2xl font-semibold">Cloud Workflow (Stack Auth + Convex)</h2>
+          <article className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-[var(--fc-muted)]">
+            <p>
+              1) Sign in with Google or GitHub.
+            </p>
+            <p>
+              2) New device stays pending until approved by an existing approved device or recovery fallback.
+            </p>
+            <p>
+              3) Only encrypted snapshots and wrapped keys are stored in the cloud.
+            </p>
+            <p>
+              4) Removing a device immediately blocks future decrypt-capable operations from that device.
+            </p>
+          </article>
+        </section>
       </main>
     </div>
   );

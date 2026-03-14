@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@stackframe/stack": "^2.8.77",
+    "convex": "^1.33.1",
     "framer-motion": "^12.34.3",
     "next": "16.1.6",
     "react": "19.2.3",

@@ -21,7 +21,14 @@ export function Navbar() {
             <a href="#how" className="transition hover:text-[var(--fc-text)]">How it works</a>
             <a href="#security" className="transition hover:text-[var(--fc-text)]">Security</a>
             <Link href="/docs" className="transition hover:text-[var(--fc-text)]">Docs</Link>
+            <Link href="/dashboard" className="transition hover:text-[var(--fc-text)]">Dashboard</Link>
           </nav>
+          <Link
+            href="/handler/sign-in?after_auth_return_to=%2Fdashboard"
+            className="hidden rounded-full border border-white/20 px-4 py-2 text-sm text-[var(--fc-text)] transition hover:border-[var(--fc-accent)]/70 md:inline-flex"
+          >
+            Sign in
+          </Link>
           <a
             href="https://github.com/Aditya190803/envsync"
             target="_blank"
