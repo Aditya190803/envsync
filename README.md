@@ -24,19 +24,19 @@ This repository includes a working Go MVP with encrypted secrets, project-based 
 ### From GitHub Releases (recommended)
 
 ```bash
-curl -fsSL https://envsync.adityamer.live/install | bash
+curl -fsSL https://envsync.adityamer.dev/install | bash
 ```
 
 Install both binaries (`envsync` and `envsync-server`):
 
 ```bash
-curl -fsSL https://envsync.adityamer.live/install | bash -s -- --with-server --yes
+curl -fsSL https://envsync.adityamer.dev/install | bash -s -- --with-server --yes
 ```
 
 Pin to a specific release:
 
 ```bash
-curl -fsSL https://envsync.adityamer.live/install | bash -s -- --version v0.1.0 --yes
+curl -fsSL https://envsync.adityamer.dev/install | bash -s -- --version v0.1.0 --yes
 ```
 
 Installer defaults:
@@ -69,6 +69,18 @@ Default installer repo: `Aditya190803/envsync`.
 ```bash
 go build -ldflags "-X main.version=$(git describe --tags --always 2>/dev/null || echo dev)" -o envsync ./cmd/envsync
 go build -o envsync-server ./cmd/envsync-server
+```
+
+### Environment files
+
+Use split env files by runtime:
+
+```bash
+# root CLI + Go services
+cp env.example .env
+
+# Next.js site app
+cp site/env.example site/.env
 ```
 
 ## Quickstart

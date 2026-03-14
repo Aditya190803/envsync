@@ -344,6 +344,45 @@ download_and_install() {
   echo "installed $bin_name -> $INSTALL_DIR/$bin_name"
 }
 
+ask_setup_preference() {
+  if [ "$ASSUME_YES" = true ]; then
+    return
+  fi
+  echo ""
+  echo "=================================================="
+  echo "Choose your Env-Sync environment setup:"
+  echo "  1) Managed Cloud (No hassle, deployed Convex/Auth)"
+  echo "  2) Self-Hosted (Manage your own infrastructure)"
+  echo "=================================================="
+  read_input setup_choice "Enter choice (1 or 2) [default: 1]: "
+  
+  if [ "$setup_choice" = "2" ]; then
+    echo ""
+    echo "--- Self-Hosting Resources ---"
+    echo "To self-host Env-Sync, you will need to configure your own backend infrastructure:"
+    echo "  1. Convex (Database & Backend): https://docs.convex.dev/production/hosting/"
+    echo "  2. Stack Auth (Authentication): https://stack-auth.com/docs/getting-started"
+    echo "  3. PostgreSQL (For envsync-cloud): Deploy a Postgres database."
+    echo ""
+    echo "View the complete self-hosting guide in our repository:"
+    echo "  https://github.com/$REPO#self-hosting"
+    echo ""
+    echo "You must set ENVSYNC_CLOUD_URL and other relevant environment variables"
+    echo "before running the CLI in self-hosted mode."
+    echo "------------------------------"
+    echo ""
+    read_input proceed_choice "Continue installing the CLI? [Y/n]: "
+    case "$proceed_choice" in
+      n|N|no|NO) echo "aborted"; exit 0 ;;
+      *) ;;
+    esac
+  else
+    echo ""
+    echo "Selected: Managed Cloud. (No hassle)"
+    echo ""
+  fi
+}
+
 confirm_install() {
   if [ "$ASSUME_YES" = true ]; then
     return
@@ -386,6 +425,7 @@ main() {
 
   detect_platform
   resolve_version
+  ask_setup_preference
   confirm_install
 
   download_and_install "envsync"
@@ -404,6 +444,8 @@ main() {
   echo "Next steps:"
   echo "  envsync init"
   echo "  envsync login"
+  echo "  cp env.example .env"
+  echo "  cp site/env.example site/.env"
 }
 
 main "$@"

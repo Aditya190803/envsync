@@ -10,3 +10,10 @@
 node_modules/
 site/node_modules/
 worker/node_modules/
+
+.env.local
+.env
+site/.env
+worker/.env
+
+_generated/
