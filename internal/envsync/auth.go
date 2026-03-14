@@ -52,9 +52,7 @@ func cloudSiteURLForAPI(baseURL string) string {
 		scheme = "https"
 	}
 	host := u.Hostname()
-	if strings.HasPrefix(host, "api.") {
-		host = strings.TrimPrefix(host, "api.")
-	}
+	host = strings.TrimPrefix(host, "api.")
 	if port := u.Port(); port != "" && (host == "127.0.0.1" || host == "localhost") {
 		return fmt.Sprintf("%s://%s:%s", scheme, host, port)
 	}
@@ -112,7 +110,8 @@ func (a *App) Login() error {
 		if err := openFn(browserURL); err != nil {
 			fmt.Fprintf(a.Stderr, "warning: could not open browser automatically: %v\n", err)
 		}
-		fmt.Fprint(a.Stderr, "Cloud access token (paste from dashboard): ")
+		fmt.Fprintln(a.Stderr, "Generate a CLI token from Dashboard > Devices > Generate CLI token, then paste it here.")
+		fmt.Fprint(a.Stderr, "Cloud access token: ")
 		reader := bufio.NewReader(a.Stdin)
 		line, err := reader.ReadString('\n')
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -121,9 +120,20 @@ func (a *App) Login() error {
 		token = strings.TrimSpace(line)
 	}
 	if token == "" {
+		return errors.New("access token cannot be empty; generate one in Dashboard > Devices > Generate CLI token")
+	}
+	return a.loginWithToken(token)
+}
+
+func (a *App) LoginWithToken(token string) error {
+	token = strings.TrimSpace(token)
+	if token == "" {
 		return errors.New("access token cannot be empty")
 	}
+	return a.loginWithToken(token)
+}
 
+func (a *App) loginWithToken(token string) error {
 	me, err := a.cloudMe(token)
 	if err != nil {
 		return err

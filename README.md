@@ -114,6 +114,9 @@ For non-interactive usage:
 
 ```bash
 export ENVSYNC_RECOVERY_PHRASE="<your recovery phrase>"
+# either set a token env var or pass --token directly to login
+# export ENVSYNC_CLOUD_ACCESS_TOKEN="<token>"
+# envsync login --token "<token>"
 ```
 
 Optional actor identity for team RBAC checks:
@@ -126,7 +129,7 @@ export ENVSYNC_ACTOR="<user-or-service-id>"
 
 ```text
 envsync init
-envsync login
+envsync login [--token <token>]
 envsync logout
 envsync whoami
 envsync doctor
@@ -182,7 +185,8 @@ Mode defaults:
 `envsync login` is browser-first by default:
 
 - opens the site device onboarding flow (`/dashboard/devices`)
-- prompts for a cloud access token to store a local CLI session
+- mint a CLI token from Dashboard > Devices > Generate CLI token
+- prompts for that cloud access token to store a local CLI session
 - no `ENVSYNC_CLOUD_URL` export is required for the hosted default
 
 ## Storage model

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"envsync/internal/envsync"
 
@@ -53,6 +54,10 @@ type runner interface {
 	Restore() error
 }
 
+type loginTokenRunner interface {
+	LoginWithToken(token string) error
+}
+
 func fatal(err error) {
 	fmt.Fprintf(os.Stderr, "error: %v\n", err)
 	os.Exit(1)
@@ -77,14 +82,36 @@ func buildRootCmd(app runner, out io.Writer) *cobra.Command {
 			return app.Init()
 		},
 	})
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "login",
+	var loginToken string
+	loginCmd := &cobra.Command{
+		Use:   "login [--token <token>]",
 		Short: "Sign in for cloud sync",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			tok := strings.TrimSpace(loginToken)
+			if tok == "" {
+				return app.Login()
+			}
+			if tokenRunner, ok := app.(loginTokenRunner); ok {
+				return tokenRunner.LoginWithToken(tok)
+			}
+
+			prev, hadPrev := os.LookupEnv("ENVSYNC_CLOUD_ACCESS_TOKEN")
+			if err := os.Setenv("ENVSYNC_CLOUD_ACCESS_TOKEN", tok); err != nil {
+				return err
+			}
+			defer func() {
+				if hadPrev {
+					_ = os.Setenv("ENVSYNC_CLOUD_ACCESS_TOKEN", prev)
+				} else {
+					_ = os.Unsetenv("ENVSYNC_CLOUD_ACCESS_TOKEN")
+				}
+			}()
 			return app.Login()
 		},
-	})
+	}
+	loginCmd.Flags().StringVar(&loginToken, "token", "", "Cloud access token (non-interactive login)")
+	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "logout",
 		Short: "Sign out and clear cloud session",

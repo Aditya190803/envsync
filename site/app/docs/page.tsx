@@ -18,7 +18,7 @@ const usageText = `envsync - encrypted env var sync
 
 Usage:
   envsync init
-  envsync login
+  envsync login [--token <token>]
   envsync logout
   envsync whoami
   envsync project create <name>
@@ -48,7 +48,7 @@ Usage:
 
 const commands = [
   { command: "envsync init", description: "Initialize envsync on this machine and create local encrypted state." },
-  { command: "envsync login", description: "Open browser onboarding, register your device, then save a local cloud session." },
+  { command: "envsync login [--token <token>]", description: "Open browser onboarding, generate a CLI token from Devices, then save a local cloud session." },
   { command: "envsync logout", description: "Sign out and clear stored cloud session." },
   { command: "envsync whoami", description: "Show your authenticated cloud identity." },
   { command: "envsync project create <name>", description: "Create a new project namespace." },
@@ -124,13 +124,16 @@ export default function DocsPage() {
               1) Sign in with Google or GitHub.
             </p>
             <p>
-              2) New device stays pending until approved by an existing approved device or recovery fallback.
+              2) Generate a CLI token from Dashboard &gt; Devices and paste it into `envsync login`.
             </p>
             <p>
-              3) Only encrypted snapshots and wrapped keys are stored in the cloud.
+              3) New device stays pending until approved by an existing approved device or recovery fallback.
             </p>
             <p>
-              4) Removing a device immediately blocks future decrypt-capable operations from that device.
+              4) Only encrypted snapshots and wrapped keys are stored in the cloud.
+            </p>
+            <p>
+              5) Removing a device immediately blocks future decrypt-capable operations from that device.
             </p>
           </article>
         </section>

@@ -58,6 +58,9 @@ export default function DevicesPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cliToken, setCliToken] = useState<string | null>(null);
+  const [isMintingCliToken, setIsMintingCliToken] = useState(false);
+  const [isCopyingCliToken, setIsCopyingCliToken] = useState(false);
 
   const localDevice = useMemo(() => {
     if (!identity) return null;
@@ -246,6 +249,45 @@ export default function DevicesPage() {
     }
   }
 
+  async function handleGenerateCliToken() {
+    setIsMintingCliToken(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/cli-token", {
+        method: "POST",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(await readError(response));
+      }
+      const body = (await response.json()) as { token?: string };
+      if (!body.token) {
+        throw new Error("token_issue_failed");
+      }
+      setCliToken(body.token);
+      setNotice("CLI token generated. Copy it now; this is only shown once.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "token_issue_failed");
+    } finally {
+      setIsMintingCliToken(false);
+    }
+  }
+
+  async function handleCopyCliToken() {
+    if (!cliToken) return;
+    setIsCopyingCliToken(true);
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(cliToken);
+      setNotice("CLI token copied. Run envsync login and paste it when prompted.");
+    } catch {
+      setError("copy_failed");
+    } finally {
+      setIsCopyingCliToken(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -373,6 +415,42 @@ export default function DevicesPage() {
               );
             })
           )}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+        <div className="flex items-center justify-between border-b border-white/10 px-3 pb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--fc-muted)]">CLI login token</h2>
+        </div>
+        <div className="space-y-3 px-3 py-4 text-sm">
+          <p className="text-[var(--fc-muted)]">
+            Generate a one-time token for <code>envsync login</code>. Keep it secret.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleGenerateCliToken()}
+              disabled={isMintingCliToken}
+              className="rounded-full bg-[var(--fc-accent)] px-3 py-1 text-xs font-semibold text-[#2b1708] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isMintingCliToken ? "Generating..." : "Generate CLI token"}
+            </button>
+            {cliToken ? (
+              <button
+                type="button"
+                onClick={() => void handleCopyCliToken()}
+                disabled={isCopyingCliToken}
+                className="rounded-full border border-white/20 px-3 py-1 text-xs transition hover:border-[var(--fc-accent)]/60 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isCopyingCliToken ? "Copying..." : "Copy token"}
+              </button>
+            ) : null}
+          </div>
+          {cliToken ? (
+            <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs">
+              {cliToken}
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

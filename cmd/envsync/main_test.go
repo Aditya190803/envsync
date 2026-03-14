@@ -20,8 +20,13 @@ func newFakeRunner() *fakeRunner {
 
 func (f *fakeRunner) mark(name string) { f.calls[name]++ }
 
-func (f *fakeRunner) Init() error                     { f.mark("Init"); return nil }
-func (f *fakeRunner) Login() error                    { f.mark("Login"); return nil }
+func (f *fakeRunner) Init() error  { f.mark("Init"); return nil }
+func (f *fakeRunner) Login() error { f.mark("Login"); return nil }
+func (f *fakeRunner) LoginWithToken(token string) error {
+	f.mark("LoginWithToken")
+	f.lastKV["login_token"] = token
+	return nil
+}
 func (f *fakeRunner) Logout() error                   { f.mark("Logout"); return nil }
 func (f *fakeRunner) WhoAmI() error                   { f.mark("WhoAmI"); return nil }
 func (f *fakeRunner) ProjectCreate(name string) error { f.mark("ProjectCreate"); return nil }
@@ -218,5 +223,24 @@ func TestAuthCommandWiring(t *testing.T) {
 		if r.calls[tc.call] == 0 {
 			t.Fatalf("expected %s to be called", tc.call)
 		}
+	}
+}
+
+func TestLoginTokenFlagUsesTokenAwareRunner(t *testing.T) {
+	r := newFakeRunner()
+	buf := &bytes.Buffer{}
+	cmd := buildRootCmd(r, buf)
+	cmd.SetArgs([]string{"login", "--token", "espat_test.deadbeef"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("login --token failed: %v", err)
+	}
+	if r.calls["LoginWithToken"] != 1 {
+		t.Fatalf("expected LoginWithToken call, got %d", r.calls["LoginWithToken"])
+	}
+	if r.calls["Login"] != 0 {
+		t.Fatalf("expected Login not called when --token is provided, got %d", r.calls["Login"])
+	}
+	if got := r.lastKV["login_token"]; got != "espat_test.deadbeef" {
+		t.Fatalf("expected token to be forwarded, got %q", got)
 	}
 }
