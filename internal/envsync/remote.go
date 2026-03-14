@@ -118,9 +118,6 @@ func (a *App) loadRemoteHTTP() (*RemoteStore, error) {
 }
 
 func (a *App) loadRemoteCloud() (*RemoteStore, error) {
-	if a.cloudBaseURL() == "" {
-		return nil, errors.New("cloud URL is not configured; set ENVSYNC_CLOUD_URL")
-	}
 	token, err := a.cloudAccessToken()
 	if err != nil {
 		return nil, err
@@ -164,9 +161,6 @@ func (a *App) saveRemoteHTTP(remote *RemoteStore, expectedRevision int) error {
 }
 
 func (a *App) saveRemoteCloud(remote *RemoteStore, expectedRevision int) error {
-	if a.cloudBaseURL() == "" {
-		return errors.New("cloud URL is not configured; set ENVSYNC_CLOUD_URL")
-	}
 	token, err := a.cloudAccessToken()
 	if err != nil {
 		return err
@@ -216,7 +210,6 @@ func validateRemoteCrypto(state *State, remote *RemoteStore) error {
 	}
 	return nil
 }
-
 
 func (a *App) httpClient() *http.Client {
 	if a.HTTPClient != nil {

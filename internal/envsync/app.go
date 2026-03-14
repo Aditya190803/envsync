@@ -19,11 +19,12 @@ import (
 )
 
 const (
-	defaultEnv     = "dev"
-	roleAdmin      = "admin"
-	roleMaintainer = "maintainer"
-	roleWriter     = "writer"
-	roleReader     = "reader"
+	defaultEnv             = "dev"
+	roleAdmin              = "admin"
+	roleMaintainer         = "maintainer"
+	roleWriter             = "writer"
+	roleReader             = "reader"
+	recoveryPhraseFileName = "envsync revocery phrase.txt"
 )
 
 type App struct {
@@ -43,6 +44,7 @@ type App struct {
 	Now             func() time.Time
 	Sleep           func(time.Duration)
 	HTTPClient      *http.Client
+	OpenBrowser     func(string) error
 	Stdin           io.Reader
 	Stdout          io.Writer
 	Stderr          io.Writer
@@ -288,7 +290,58 @@ func (a *App) Init() error {
 	a.logAudit("init", state, map[string]any{"device_id": deviceID})
 	fmt.Fprintf(a.Stdout, "%s\n\n", cSuccess("envsync initialized"))
 	fmt.Fprintf(a.Stdout, "Recovery phrase (save this now; it is not stored):\n%s\n", cBold(phrase))
+	a.promptAndSaveRecoveryPhrase(phrase)
 	return nil
+}
+
+func (a *App) promptAndSaveRecoveryPhrase(phrase string) {
+	fmt.Fprintf(a.Stderr, "Optional: directory path to save recovery phrase as %q (press Enter to skip): ", recoveryPhraseFileName)
+	reader := bufio.NewReader(a.Stdin)
+	line, err := reader.ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		fmt.Fprintf(a.Stderr, "warning: failed reading recovery phrase save path: %v\n", err)
+		return
+	}
+	dir := strings.TrimSpace(line)
+	if dir == "" {
+		if errors.Is(err, io.EOF) {
+			fmt.Fprintln(a.Stderr)
+		}
+		return
+	}
+	path, saveErr := a.saveRecoveryPhraseFile(dir, phrase)
+	if saveErr != nil {
+		fmt.Fprintf(a.Stderr, "warning: %v\n", saveErr)
+		return
+	}
+	fmt.Fprintf(a.Stderr, "%s %s\n", cSuccess("saved recovery phrase file"), cBold(path))
+}
+
+func (a *App) saveRecoveryPhraseFile(dir string, phrase string) (string, error) {
+	if strings.HasPrefix(dir, "~/") || dir == "~" {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			return "", homeErr
+		}
+		if dir == "~" {
+			dir = home
+		} else {
+			dir = filepath.Join(home, strings.TrimPrefix(dir, "~/"))
+		}
+	}
+	if !filepath.IsAbs(dir) {
+		dir = filepath.Join(a.CWD, dir)
+	}
+	dir = filepath.Clean(dir)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("create recovery phrase directory: %w", err)
+	}
+	path := filepath.Join(dir, recoveryPhraseFileName)
+	contents := fmt.Sprintf("Recovery phrase (save this now; it is not stored):\n%s\n", phrase)
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		return "", fmt.Errorf("save recovery phrase file: %w", err)
+	}
+	return path, nil
 }
 
 func (a *App) TeamCreate(name string) error {

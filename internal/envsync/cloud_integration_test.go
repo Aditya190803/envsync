@@ -58,6 +58,59 @@ func TestLoginFailsForExpiredOrRevokedPAT(t *testing.T) {
 	}
 }
 
+func TestCloudBaseURLDefaultsWhenUnset(t *testing.T) {
+	app := &App{}
+	if got := app.cloudBaseURL(); got != defaultCloudAPIURL {
+		t.Fatalf("expected default cloud URL %q, got %q", defaultCloudAPIURL, got)
+	}
+}
+
+func TestLoginOpensBrowserAndSavesSession(t *testing.T) {
+	tmp := t.TempDir()
+	var seenAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/me" {
+			http.NotFound(w, r)
+			return
+		}
+		seenAuth = strings.TrimSpace(r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"user":{"id":"u_123","email":"dev@example.com"}}`))
+	}))
+	defer srv.Close()
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	opened := ""
+	app := &App{
+		ConfigDir:   filepath.Join(tmp, "cfg"),
+		SessionPath: filepath.Join(tmp, "cfg", "session.json"),
+		CloudURL:    srv.URL,
+		Stdin:       strings.NewReader("pat-token\n"),
+		Stdout:      stdout,
+		Stderr:      stderr,
+		HTTPClient:  srv.Client(),
+		Now:         time.Now,
+		OpenBrowser: func(rawURL string) error {
+			opened = rawURL
+			return nil
+		},
+	}
+
+	if err := app.Login(); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	if seenAuth != "Bearer pat-token" {
+		t.Fatalf("expected bearer token to be used, got %q", seenAuth)
+	}
+	if opened == "" || !strings.Contains(opened, "/dashboard/devices") {
+		t.Fatalf("expected browser login URL to target dashboard devices, got %q", opened)
+	}
+	if !strings.Contains(stdout.String(), "logged in as") {
+		t.Fatalf("expected success output, got %q", stdout.String())
+	}
+}
+
 func TestPullRejectsMismatchedRecoveryMetadata(t *testing.T) {
 	tmp := t.TempDir()
 	cwd := filepath.Join(tmp, "repo")

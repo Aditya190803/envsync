@@ -162,6 +162,104 @@ func TestInitReRunUpgradesLegacyStateSchema(t *testing.T) {
 	}
 }
 
+func TestInitWritesRecoveryPhraseFileToRequestedDirectory(t *testing.T) {
+	tmp := t.TempDir()
+	cwd := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	saveDir := filepath.Join(tmp, "phrase-store")
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	app := &App{
+		ConfigDir:  filepath.Join(tmp, "cfg"),
+		StatePath:  filepath.Join(tmp, "cfg", "state.json"),
+		RemotePath: filepath.Join(tmp, "cfg", "remote.json"),
+		CWD:        cwd,
+		Stdin:      strings.NewReader(saveDir + "\n"),
+		Stdout:     stdout,
+		Stderr:     stderr,
+		Now:        func() time.Time { return time.Unix(0, 0).UTC() },
+	}
+
+	if err := app.Init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	phrase := lines[len(lines)-1]
+	filePath := filepath.Join(saveDir, recoveryPhraseFileName)
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("read recovery phrase file: %v", err)
+	}
+	if !strings.Contains(string(b), phrase) {
+		t.Fatalf("expected recovery phrase file to include generated phrase")
+	}
+	if !strings.Contains(stderr.String(), "saved recovery phrase file") {
+		t.Fatalf("expected save confirmation, got %q", stderr.String())
+	}
+}
+
+func TestInitSkipsRecoveryPhraseFileWhenPathIsEmpty(t *testing.T) {
+	tmp := t.TempDir()
+	cwd := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	app := &App{
+		ConfigDir:  filepath.Join(tmp, "cfg"),
+		StatePath:  filepath.Join(tmp, "cfg", "state.json"),
+		RemotePath: filepath.Join(tmp, "cfg", "remote.json"),
+		CWD:        cwd,
+		Stdin:      strings.NewReader("\n"),
+		Stdout:     &bytes.Buffer{},
+		Stderr:     &bytes.Buffer{},
+		Now:        func() time.Time { return time.Unix(0, 0).UTC() },
+	}
+
+	if err := app.Init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+
+	defaultPath := filepath.Join(cwd, recoveryPhraseFileName)
+	if _, err := os.Stat(defaultPath); err == nil {
+		t.Fatalf("expected no recovery phrase file at %s", defaultPath)
+	} else if !os.IsNotExist(err) {
+		t.Fatalf("stat recovery phrase file: %v", err)
+	}
+}
+
+func TestInitWarnsWhenRecoveryPhraseDirectoryIsInvalid(t *testing.T) {
+	tmp := t.TempDir()
+	cwd := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	blocker := filepath.Join(tmp, "not-a-directory")
+	if err := os.WriteFile(blocker, []byte("x"), 0o600); err != nil {
+		t.Fatalf("create blocker: %v", err)
+	}
+	stderr := &bytes.Buffer{}
+	app := &App{
+		ConfigDir:  filepath.Join(tmp, "cfg"),
+		StatePath:  filepath.Join(tmp, "cfg", "state.json"),
+		RemotePath: filepath.Join(tmp, "cfg", "remote.json"),
+		CWD:        cwd,
+		Stdin:      strings.NewReader(blocker + "\n"),
+		Stdout:     &bytes.Buffer{},
+		Stderr:     stderr,
+		Now:        func() time.Time { return time.Unix(0, 0).UTC() },
+	}
+
+	if err := app.Init(); err != nil {
+		t.Fatalf("init: %v", err)
+	}
+	if !strings.Contains(stderr.String(), "create recovery phrase directory") {
+		t.Fatalf("expected recovery phrase directory warning, got %q", stderr.String())
+	}
+}
+
 func TestPushPullHTTPRemote(t *testing.T) {
 	tmp := t.TempDir()
 	cwd := filepath.Join(tmp, "repo")

@@ -8,9 +8,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
+)
+
+const (
+	defaultCloudAPIURL  = "https://envsync.adityamer.dev"
+	defaultCloudSiteURL = "https://envsync.adityamer.dev"
 )
 
 type cloudSession struct {
@@ -25,18 +33,86 @@ func (a *App) cloudBaseURL() string {
 	if v := strings.TrimSuffix(strings.TrimSpace(a.CloudURL), "/"); v != "" {
 		return v
 	}
-	return ""
+	if v := strings.TrimSuffix(strings.TrimSpace(os.Getenv("ENVSYNC_CLOUD_URL")), "/"); v != "" {
+		return v
+	}
+	return defaultCloudAPIURL
+}
+
+func cloudSiteURLForAPI(baseURL string) string {
+	if v := strings.TrimSuffix(strings.TrimSpace(os.Getenv("ENVSYNC_SITE_URL")), "/"); v != "" {
+		return v
+	}
+	u, err := url.Parse(strings.TrimSpace(baseURL))
+	if err != nil || u.Hostname() == "" {
+		return defaultCloudSiteURL
+	}
+	scheme := u.Scheme
+	if scheme == "" {
+		scheme = "https"
+	}
+	host := u.Hostname()
+	if strings.HasPrefix(host, "api.") {
+		host = strings.TrimPrefix(host, "api.")
+	}
+	if port := u.Port(); port != "" && (host == "127.0.0.1" || host == "localhost") {
+		return fmt.Sprintf("%s://%s:%s", scheme, host, port)
+	}
+	return fmt.Sprintf("%s://%s", scheme, host)
+}
+
+func cloudBrowserLoginURL(baseURL string) string {
+	siteURL := cloudSiteURLForAPI(baseURL)
+	u, err := url.Parse(strings.TrimSuffix(siteURL, "/") + "/dashboard/devices")
+	if err != nil {
+		return defaultCloudSiteURL + "/dashboard/devices"
+	}
+	q := u.Query()
+	q.Set("source", "envsync-cli")
+	if baseURL != "" {
+		q.Set("cloud", strings.TrimSuffix(baseURL, "/"))
+	}
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+func openBrowserURL(rawURL string) error {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" {
+		return errors.New("empty url")
+	}
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", rawURL)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", rawURL)
+	default:
+		if _, err := exec.LookPath("xdg-open"); err == nil {
+			cmd = exec.Command("xdg-open", rawURL)
+		} else if _, err := exec.LookPath("wslview"); err == nil {
+			cmd = exec.Command("wslview", rawURL)
+		} else {
+			return errors.New("no supported browser opener found (xdg-open/wslview)")
+		}
+	}
+	return cmd.Start()
 }
 
 func (a *App) Login() error {
 	baseURL := a.cloudBaseURL()
-	if baseURL == "" {
-		return errors.New("cloud URL is not configured; set ENVSYNC_CLOUD_URL")
-	}
-
 	token := strings.TrimSpace(os.Getenv("ENVSYNC_CLOUD_ACCESS_TOKEN"))
 	if token == "" {
-		fmt.Fprint(a.Stderr, "Cloud access token: ")
+		browserURL := cloudBrowserLoginURL(baseURL)
+		fmt.Fprintf(a.Stderr, "Open this URL to sign in and register your first device:\n%s\n", browserURL)
+		openFn := a.OpenBrowser
+		if openFn == nil {
+			openFn = openBrowserURL
+		}
+		if err := openFn(browserURL); err != nil {
+			fmt.Fprintf(a.Stderr, "warning: could not open browser automatically: %v\n", err)
+		}
+		fmt.Fprint(a.Stderr, "Cloud access token (paste from dashboard): ")
 		reader := bufio.NewReader(a.Stdin)
 		line, err := reader.ReadString('\n')
 		if err != nil && !errors.Is(err, io.EOF) {

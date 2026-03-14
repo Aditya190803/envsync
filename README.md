@@ -176,8 +176,14 @@ export ENVSYNC_REMOTE_MODE=cloud
 Mode defaults:
 
 - `http` when `ENVSYNC_REMOTE_URL` is set (self-host compatibility)
-- `cloud` when `ENVSYNC_CLOUD_URL` is set and a cloud session exists
+- `cloud` when a cloud session exists (uses default `https://envsync.adityamer.dev` unless overridden)
 - `file` otherwise
+
+`envsync login` is browser-first by default:
+
+- opens the site device onboarding flow (`/dashboard/devices`)
+- prompts for a cloud access token to store a local CLI session
+- no `ENVSYNC_CLOUD_URL` export is required for the hosted default
 
 ## Storage model
 
